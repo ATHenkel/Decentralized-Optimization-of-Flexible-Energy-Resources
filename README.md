@@ -1,52 +1,72 @@
-# Centralized Optimization Model
+# **Methodology for Distributed Optimization of Flexible Energy Resources**  
+### **Semi-Automated Model Transformation and Deployment**  
 
-This repository contains a centralized optimization model for managing the operation of alkaline water electrolysis. The model is built using IBM ILOG CPLEX Optimization Studio and reads input data from Excel files. The model aims to minimize operational costs while meeting production demands and adhering to operational constraints.
+This repository provides a **reference implementation** of a methodology for **transforming centralized optimization models** into **distributed ADMM-based optimization models** using a **multi-agent system**. The implementation is designed to **automate the decomposition** of centralized models and enable **scalable distributed optimization** across multiple computing units.
 
-## Table of Contents
+---
 
-- [Prerequisites](#prerequisites)
-- [Project Structure](#project-structure)
-- [Setup](#setup)
-- [Running the Model](#running-the-model)
-- [Input Data Format](#input-data-format)
-- [Output](#output)
-- [Contributing](#contributing)
-- [License](#license)
+## **Repository Structure**  
 
-## Prerequisites
-
-- Java Development Kit (JDK) 8 or later
-- IBM ILOG CPLEX Optimization Studio
-- Apache POI Library for reading/writing Excel files
-
-## Project Structure
-CentralizedOptimization/
-├── CentralizedOptimization/
-│ ├── OptimizationModel.java
-│ └── ...
-├── in/
-│ ├── InputData.xlsx
-├── out/
-│ └── OptimizationResults.xlsx
-└── README.md
-
-## Setup
-
-1. **Clone the repository:**
-
-   ```bash
-   git clone https://github.com/yourusername/CentralizedOptimization.git
-   cd CentralizedOptimization
-
-## Running the model
-1. **Compile the Java code:
- ```bash
-  javac -cp "path/to/cplex.jar:path/to/poi.jar:path/to/poi-ooxml.jar" CentralizedOptimization/CentralizedOptimization/OptimizationModel.java
-
-2. Run the model:
 ```bash
-  java -cp "path/to/cplex.jar:path/to/poi.jar:path/to/poi-ooxml.jar:." CentralizedOptimization.CentralizedOptimization.OptimizationModel
+root/
+│-- in/  
+│   ├── model.ampl  # Centralized optimization model  
+│   ├── config.xlsx  # (Optional) Excel file for agent system parameterization  
+│  
+│-- out/  
+│   ├── update_1.ampl  # ADMM update files  
+│   ├── update_2.ampl  
+│  
+│-- amplTransformator/  
+│   ├── src/main/java/com/project/amplTransformator/  
+│       ├── CentralizedToADMMConverter.java  # Converts centralized model to ADMM updates  
+│  
+│-- agents/  
+│   ├── src/main/java/com/project/agents/  
+│       ├── ADMMAgent.java  # Optimization agent  
+│       ├── AMSAgent.java  # Agent Management System (coordination)  
+│  
+│-- models/  
+│   ├── src/main/java/com/project/models/  
+│       ├── Electrolyzer.java  # Electrolyzer representation  
+│       ├── Period.java  # Time period representation
+│       ├── ...
+│  
+│-- behaviour/  
+│   ├── src/main/java/com/project/behaviour/  
+│       ├── LoadParametersBehaviour.java  # JADE behavior for distributed optimization
+│       ├── ...  
+│  
+│-- config/  
+│   ├── application.properties  # Configuration file for system settings  
+│  
+│-- lib/  
+│   ├── jade.jar  # JADE library for multi-agent communication  
+│  
+│-- README.md  # This file  
+│-- pom.xml  # Maven dependencies (if using Maven)  
+│-- build.gradle  # Gradle dependencies (if using Gradle)  
+│-- LICENSE  # License file  
 
 
+---
+## **Setup & Installation**  
 
+### **Prerequisites**  
+Before running the system, ensure that you have installed:  
+- **Java 11+** (or a compatible version)  
+- **Maven** or **Gradle** (depending on your build system)  
+- **JADE** (for the multi-agent system, included in `/lib/`)  
 
+### **Installation**  
+1. Clone the repository:  
+   ```bash
+   git clone https://github.com/your-repo-url.git  
+   cd your-repo
+
+## **Contact**  
+
+For any questions or inquiries, feel free to contact:  
+
+📌 **Vincent Henkel**  
+📧 [Vincent.Henkel@hsu-hh.de](mailto:Vincent.Henkel@hsu-hh.de)

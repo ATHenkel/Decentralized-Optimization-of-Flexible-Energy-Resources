@@ -1,5 +1,6 @@
 # **Methodology for Distributed Optimization of Flexible Energy Resources**  
-### **Semi-Automated Model Transformation and Deployment**  
+
+## **Semi-Automated Model Transformation and Deployment**  
 
 This repository provides a **reference implementation** of a methodology for **transforming centralized optimization models** into **distributed ADMM-based optimization models** using a **multi-agent system**. The implementation is designed to **automate the decomposition** of centralized models and enable **scalable distributed optimization** across multiple computing units.
 
@@ -29,12 +30,12 @@ root/
 │-- models/  
 │   ├── src/main/java/com/project/models/  
 │       ├── Electrolyzer.java  # Electrolyzer representation  
-│       ├── Period.java  # Time period representation
-│       ├── ...
+│       ├── Period.java  # Time period representation  
+│       ├── ...  
 │  
 │-- behaviour/  
 │   ├── src/main/java/com/project/behaviour/  
-│       ├── LoadParametersBehaviour.java  # JADE behavior for distributed optimization
+│       ├── LoadParametersBehaviour.java  # JADE behavior for distributed optimization  
 │       ├── ...  
 │  
 │-- config/  
@@ -47,9 +48,10 @@ root/
 │-- pom.xml  # Maven dependencies (if using Maven)  
 │-- build.gradle  # Gradle dependencies (if using Gradle)  
 │-- LICENSE  # License file  
-
+```
 
 ---
+
 ## **Setup & Installation**  
 
 ### **Prerequisites**  
@@ -62,11 +64,27 @@ Before running the system, ensure that you have installed:
 1. Clone the repository:  
    ```bash
    git clone https://github.com/your-repo-url.git  
-   cd your-repo
+   cd your-repo  
+   ```
+2. Build the project using Maven or Gradle:  
+   ```bash
+   mvn clean install  # If using Maven  
+   ```
+   or  
+   ```bash
+   gradle build  # If using Gradle  
+   ```
+
+3. Run the system:  
+   ```bash
+   java -jar target/your-jar-file.jar  # Adjust the path based on your build output  
+   ```
+
+---
 
 ## **Contact**  
 
 For any questions or inquiries, feel free to contact:  
 
 📌 **Vincent Henkel**  
-📧 [Vincent.Henkel@hsu-hh.de](mailto:Vincent.Henkel@hsu-hh.de)
+📧 [Vincent.Henkel@hsu-hh.de](mailto:Vincent.Henkel@hsu-hh.de)  

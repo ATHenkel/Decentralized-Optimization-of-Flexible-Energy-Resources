@@ -1,0 +1,6 @@
+<configuration>
+    <logger name="org.eclipse.milo" level="WARN"/>
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>

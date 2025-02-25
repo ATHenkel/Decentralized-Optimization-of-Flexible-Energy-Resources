@@ -1,0 +1,27 @@
+#Code für AMS-Agenten	
+
+# Für den Raspberry Pi (auskommentieren, wenn auf einem x86-System)
+FROM --platform=linux/arm64 arm64v8/openjdk:11-jdk-slim
+
+# Für ein x86-System (PC) 
+#FROM openjdk:11-jdk-slim
+
+# Erstelle Arbeitsverzeichnisse
+WORKDIR /JavaApp
+
+# Kopiere die Java-Dateien und die Bibliotheken
+COPY src/main/java/agents/AMSAgent.java /JavaApp/src/agents/AMSAgent.java
+COPY lib/jade.jar /JavaApp/libs/jade.jar
+
+# Erstelle das Verzeichnis für die kompilierten Klassen
+RUN mkdir -p /JavaApp/bin
+
+# Kompiliere die Java-Dateien und speichere die kompilierte Klasse im "bin"-Verzeichnis
+RUN javac -cp "/JavaApp/libs/jade.jar" -d /JavaApp/bin /JavaApp/src/agents/AMSAgent.java
+
+# Setze das Arbeitsverzeichnis auf das "bin"-Verzeichnis
+WORKDIR /JavaApp/bin
+
+# Führe den AMSAgent aus (mit den Umgebungsvariablen MAIN_HOST und TOTAL_ADMM_AGENTS)
+CMD ["java", "-cp", ".:/JavaApp/libs/jade.jar", "agents.AMSAgent"]
+

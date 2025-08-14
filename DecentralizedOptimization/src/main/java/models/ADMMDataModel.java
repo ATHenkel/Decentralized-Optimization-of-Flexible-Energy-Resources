@@ -2096,6 +2096,235 @@ public class ADMMDataModel {
             }
         }
     }
+
+      // ... existing code ...
+public void exportAllVariablesPerElectrolyzerToExcel(int maxIteration, Set<Electrolyzer> electrolyzers, 
+Set<Period> periods, String baseFilePath) throws IOException {
+
+String filePath = baseFilePath + "_All_Electrolyzers.xlsx";
+
+try (Workbook workbook = new XSSFWorkbook()) {
+
+// Erstelle ein Sheet für alle Variablen aller Elektrolyseure
+Sheet mainSheet = workbook.createSheet("All Variables All Electrolyzers");
+
+// Erstelle Header-Zeile
+Row headerRow = mainSheet.createRow(0);
+headerRow.createCell(0).setCellValue("Iteration");
+headerRow.createCell(1).setCellValue("Period");
+headerRow.createCell(2).setCellValue("Electrolyzer_ID");
+headerRow.createCell(3).setCellValue("X_Value");
+headerRow.createCell(4).setCellValue("Y_IDLE");
+headerRow.createCell(5).setCellValue("Y_STARTING");
+headerRow.createCell(6).setCellValue("Y_PRODUCTION");
+headerRow.createCell(7).setCellValue("Y_STANDBY");
+headerRow.createCell(8).setCellValue("S_1");
+headerRow.createCell(9).setCellValue("S_2");
+headerRow.createCell(10).setCellValue("U_1");
+headerRow.createCell(11).setCellValue("U_2");
+headerRow.createCell(12).setCellValue("U_3");
+headerRow.createCell(13).setCellValue("Active_State");
+
+int rowIndex = 1;
+
+// Iteriere über alle Iterationen
+for (int iteration = 0; iteration <= maxIteration; iteration++) {
+
+// Hole alle Variablen für diese Iteration
+double[][] xValues = getXSWOValuesForIteration(iteration);
+boolean[][][] yValues = getYSWOValuesForIteration(iteration);
+double[][][] sValues = getSSWOValuesForIteration(iteration);
+double[][][] uValues = getUSWOValuesForIteration(iteration);
+
+// Prüfe ob Daten für diese Iteration vorhanden sind
+if (xValues == null || yValues == null || sValues == null || uValues == null) {
+continue; // Überspringe diese Iteration, wenn keine Daten vorhanden
+}
+
+// Iteriere über alle Elektrolyseure
+for (Electrolyzer electrolyzer : electrolyzers) {
+int electrolyzerId = electrolyzer.getId();
+int agentIndex = electrolyzerId - 1;
+
+// Prüfe ob der Agent-Index gültig ist
+if (agentIndex >= xValues.length || agentIndex >= yValues.length || 
+agentIndex >= sValues.length || agentIndex >= uValues.length) {
+continue;
+}
+
+// Iteriere über alle Perioden
+for (Period period : periods) {
+int periodIndex = period.getT() - 1;
+
+// Prüfe ob der Perioden-Index gültig ist
+if (periodIndex >= xValues[agentIndex].length || 
+periodIndex >= yValues[agentIndex].length ||
+periodIndex >= sValues[agentIndex].length || 
+periodIndex >= uValues[agentIndex].length) {
+continue;
+}
+
+Row row = mainSheet.createRow(rowIndex++);
+
+// Iteration
+row.createCell(0).setCellValue(iteration);
+
+// Periode
+row.createCell(1).setCellValue(period.getT());
+
+// Elektrolyseur ID
+row.createCell(2).setCellValue(electrolyzerId);
+
+// X-Wert
+double xValue = xValues[agentIndex][periodIndex];
+row.createCell(3).setCellValue(xValue);
+
+// Y-Werte (Zustände)
+boolean[] yState = yValues[agentIndex][periodIndex];
+row.createCell(4).setCellValue(yState[State.IDLE.ordinal()] ? 1 : 0);
+row.createCell(5).setCellValue(yState[State.STARTING.ordinal()] ? 1 : 0);
+row.createCell(6).setCellValue(yState[State.PRODUCTION.ordinal()] ? 1 : 0);
+row.createCell(7).setCellValue(yState[State.STANDBY.ordinal()] ? 1 : 0);
+
+// S-Werte (Slack-Variablen)
+double[] sState = sValues[agentIndex][periodIndex];
+row.createCell(8).setCellValue(sState[0]); // S_1
+row.createCell(9).setCellValue(sState[1]); // S_2
+
+// U-Werte (Dual-Variablen)
+double[] uState = uValues[agentIndex][periodIndex];
+row.createCell(10).setCellValue(uState[0]); // U_1
+row.createCell(11).setCellValue(uState[1]); // U_2
+row.createCell(12).setCellValue(uState[2]); // U_3
+
+// Aktiver Zustand (String-Repräsentation)
+String activeState = "None";
+for (State state : State.values()) {
+if (yState[state.ordinal()]) {
+activeState = state.name();
+break;
+}
+}
+row.createCell(13).setCellValue(activeState);
+}
+}
+}
+
+// Erstelle ein Sheet für Zusammenfassung pro Iteration
+Sheet summarySheet = workbook.createSheet("Summary per Iteration");
+
+// Header für Zusammenfassung
+Row summaryHeaderRow = summarySheet.createRow(0);
+summaryHeaderRow.createCell(0).setCellValue("Iteration");
+summaryHeaderRow.createCell(1).setCellValue("Total_X_Sum");
+summaryHeaderRow.createCell(2).setCellValue("Avg_X_Value");
+summaryHeaderRow.createCell(3).setCellValue("Total_Production_Periods");
+summaryHeaderRow.createCell(4).setCellValue("Total_Idle_Periods");
+summaryHeaderRow.createCell(5).setCellValue("Total_Starting_Periods");
+summaryHeaderRow.createCell(6).setCellValue("Total_Standby_Periods");
+summaryHeaderRow.createCell(7).setCellValue("Total_S_Sum");
+summaryHeaderRow.createCell(8).setCellValue("Total_U_Sum");
+
+int summaryRowIndex = 1;
+
+// Erstelle Zusammenfassung pro Iteration
+for (int iteration = 0; iteration <= maxIteration; iteration++) {
+double[][] xValues = getXSWOValuesForIteration(iteration);
+boolean[][][] yValues = getYSWOValuesForIteration(iteration);
+double[][][] sValues = getSSWOValuesForIteration(iteration);
+double[][][] uValues = getUSWOValuesForIteration(iteration);
+
+if (xValues == null || yValues == null || sValues == null || uValues == null) {
+continue;
+}
+
+Row summaryRow = summarySheet.createRow(summaryRowIndex++);
+
+// Iteration
+summaryRow.createCell(0).setCellValue(iteration);
+
+// Berechne Statistiken über alle Elektrolyseure
+double totalXSum = 0.0;
+int totalProductionPeriods = 0;
+int totalIdlePeriods = 0;
+int totalStartingPeriods = 0;
+int totalStandbyPeriods = 0;
+double totalSSum = 0.0;
+double totalUSum = 0.0;
+int totalValidPeriods = 0;
+
+for (Electrolyzer electrolyzer : electrolyzers) {
+int agentIndex = electrolyzer.getId() - 1;
+
+if (agentIndex >= xValues.length || agentIndex >= yValues.length || 
+agentIndex >= sValues.length || agentIndex >= uValues.length) {
+continue;
+}
+
+for (Period period : periods) {
+int periodIndex = period.getT() - 1;
+
+if (periodIndex < xValues[agentIndex].length && 
+periodIndex < yValues[agentIndex].length &&
+periodIndex < sValues[agentIndex].length && 
+periodIndex < uValues[agentIndex].length) {
+
+// X-Werte
+double xValue = xValues[agentIndex][periodIndex];
+totalXSum += xValue;
+
+// Y-Werte (Zustände zählen)
+boolean[] yState = yValues[agentIndex][periodIndex];
+if (yState[State.PRODUCTION.ordinal()]) totalProductionPeriods++;
+if (yState[State.IDLE.ordinal()]) totalIdlePeriods++;
+if (yState[State.STARTING.ordinal()]) totalStartingPeriods++;
+if (yState[State.STANDBY.ordinal()]) totalStandbyPeriods++;
+
+// S-Werte
+double[] sState = sValues[agentIndex][periodIndex];
+totalSSum += Math.abs(sState[0]) + Math.abs(sState[1]);
+
+// U-Werte
+double[] uState = uValues[agentIndex][periodIndex];
+totalUSum += Math.abs(uState[0]) + Math.abs(uState[1]) + Math.abs(uState[2]);
+
+totalValidPeriods++;
+}
+}
+}
+
+// Fülle Zusammenfassungszeile
+summaryRow.createCell(1).setCellValue(totalXSum);
+summaryRow.createCell(2).setCellValue(totalValidPeriods > 0 ? totalXSum / totalValidPeriods : 0.0);
+summaryRow.createCell(3).setCellValue(totalProductionPeriods);
+summaryRow.createCell(4).setCellValue(totalIdlePeriods);
+summaryRow.createCell(5).setCellValue(totalStartingPeriods);
+summaryRow.createCell(6).setCellValue(totalStandbyPeriods);
+summaryRow.createCell(7).setCellValue(totalSSum);
+summaryRow.createCell(8).setCellValue(totalUSum);
+}
+
+// Auto-resize Spalten
+for (int i = 0; i < 14; i++) {
+mainSheet.autoSizeColumn(i);
+}
+for (int i = 0; i < 9; i++) {
+summarySheet.autoSizeColumn(i);
+}
+
+// Speichere die Datei
+try (FileOutputStream fileOut = new FileOutputStream(filePath)) {
+workbook.write(fileOut);
+}
+
+System.out.println("Alle Variablen für alle Elektrolyseure erfolgreich exportiert nach: " + filePath);
+
+} catch (Exception e) {
+System.err.println("Fehler beim Exportieren der Variablen: " + e.getMessage());
+e.printStackTrace();
+}
+}
+
     
     public void exportXRTOResultsWithYToExcel(String filePath, int finalSWOIteration, int currentSWOPeriod, int rtoStepsPerSWO) {
         // Erstelle ein neues Excel-Arbeitsbuch und ein Arbeitsblatt

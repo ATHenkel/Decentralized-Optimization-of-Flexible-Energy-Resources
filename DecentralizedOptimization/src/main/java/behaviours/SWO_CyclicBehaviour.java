@@ -300,6 +300,23 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
             String excelFilePathIterationResults = desktopPath + "/" + saveDetails + "_ADMM_Results_" + myAgent.getLocalName() + ".xlsx";
             String excelFilePathFinalResults = desktopPath + "/" + saveDetails + "_FinalSWOResults_" + myAgent.getLocalName() + ".xlsx";
 
+            
+            // Exportiere alle Variablen pro Elektrolyseur in separate Excel-Dateien
+            try {
+                String baseFilePath = desktopPath + "/" + saveDetails + "_ADMM_Variables_Iteration_" + swoIterationCount;
+                dataModel.exportAllVariablesPerElectrolyzerToExcel(
+                    swoIterationCount, 
+                    parameters.getElectrolyzers(), 
+                    parameters.getPeriods(), 
+                    baseFilePath
+                );
+                System.out.println("Alle Variablen erfolgreich in separate Excel-Dateien exportiert.");
+            } catch (Exception e) {
+                System.err.println("Fehler beim Exportieren der Variablen: " + e.getMessage());
+                e.printStackTrace();
+            }
+
+            /* 
             // Export der finalen Ergebnisse
             dataModel.exportFinalIterationResultsToExcel(swoIterationCount, parameters.getElectrolyzers(), parameters.getPeriods(), parameters, excelFilePathFinalResults);
             
@@ -314,7 +331,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
                 7,  
                 rho,
                 swoIterationCount //entspricht finaler Iteration
-            ));
+            ));*/
             
             System.out.println("Entferne SWO-Cyclic Behaviour für Agent: " + myAgent.getLocalName());
             myAgent.removeBehaviour(this);

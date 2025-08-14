@@ -38,7 +38,7 @@ public class MainContainer {
             // Setze Parameter
             int totalNumberADMMAgents = 4; 
             double rho = 1.37728;
-            int maxIterations = 250;
+            int maxIterations = 8;
             
             // Starte den AMSAgent
             Object[] amsAgentArgs = new Object[]{totalNumberADMMAgents};
@@ -52,7 +52,7 @@ public class MainContainer {
             Map<Integer, Set<Integer>> agentElectrolyzerMap = distributeElectrolyzers(totalNumberADMMAgents, 120);
 
             // Perioden-Sets für Agenten festlegen
-            Map<Integer, String> periodSets = distributePeriods(totalNumberADMMAgents, 16);
+            Map<Integer, String> periodSets = distributePeriods(totalNumberADMMAgents, 96);
 
             // Agenten starten
             for (int i = 1; i <= totalNumberADMMAgents; i++) {

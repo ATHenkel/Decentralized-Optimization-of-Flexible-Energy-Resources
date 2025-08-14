@@ -125,26 +125,6 @@ public class SWO_XUpdateBehaviour extends OneShotBehaviour {
 
         int nextIteration = iteration + 1;
         
-        /*
-        // ------------------------- FIXIERUNG -------------------------
-        // Für alle Perioden, die bereits optimiert wurden (t < currentStartPeriod),
-        // werden die x-Variablen fixiert, d.h. LB und UB werden auf den zuvor gespeicherten Wert gesetzt.
-		for (Electrolyzer e : electrolyzers) {
-			int agentID = e.getId() - 1;
-			for (Period t : periods) {
-				if (t.getT() >= currentStartPeriod) {
-					if (myAgent.getLocalName().equals("ADMM3")) {
-					System.err.println("Fixiere x-Werte für Periode: " + t + " in Startperiode: " + currentStartPeriod);
-					}
-					// Hier rufen wir den bereits gespeicherten x-Wert (iterationsunabhängig) ab
-					double fixedValue = dataModel.getXSWOResultForAgentPeriod(agentID, t.getT() - 1);
-					GRBVar xVar = xVars.get(e).get(t);
-					xVar.set(GRB.DoubleAttr.LB, fixedValue);
-					xVar.set(GRB.DoubleAttr.UB, fixedValue);
-				}
-			}
-		}
-		*/
 
         // Define the objective function for all agents
         GRBLinExpr objective = new GRBLinExpr();
@@ -187,6 +167,7 @@ public class SWO_XUpdateBehaviour extends OneShotBehaviour {
             double[][] uValues = dataModel.getUSWOValuesForAgent(iteration, e.getId() - 1);
             double opMin = params.minOperation.get(e);
             double opMax = params.maxOperation.get(e);
+            double scalingFactor = 99;
 
 			for (Period t : periods) {
 				if (t.getT() >= currentStartPeriod) {
@@ -212,8 +193,8 @@ public class SWO_XUpdateBehaviour extends OneShotBehaviour {
 							"upperBoundaryResidual_" + e.getId() + "_" + t.getT());
 
 					// Add quadratic penalty terms
-					quadraticPenalty.addTerm(rho, residual1Vars.get(e).get(t), residual1Vars.get(e).get(t));
-					quadraticPenalty.addTerm(rho, residual2Vars.get(e).get(t), residual2Vars.get(e).get(t));
+					quadraticPenalty.addTerm(rho*scalingFactor, residual1Vars.get(e).get(t), residual1Vars.get(e).get(t));
+					quadraticPenalty.addTerm(rho*scalingFactor, residual2Vars.get(e).get(t), residual2Vars.get(e).get(t));
 
 				}
 			}

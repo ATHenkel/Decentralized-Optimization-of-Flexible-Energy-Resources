@@ -3,20 +3,15 @@ package behaviours;
 import jade.core.behaviours.OneShotBehaviour;
 import java.util.*;
 import java.util.function.Predicate;
-
-import org.apache.commons.math3.analysis.function.Max;
-
 import models.*;
 import com.gurobi.gurobi.*;
 
 public class RTO_SUpdateBehaviour extends OneShotBehaviour {
     
     private static final long serialVersionUID = 1L;
-    private GRBModel model; // Obwohl hier keine Optimierung erfolgt, behalten wir das Modell bei, falls es noch benötigt wird
     private Parameters params;
-    private Set<Electrolyzer> electrolyzers; // Menge der Elektrolyseure
+    private Set<Electrolyzer> electrolyzers; // Set of electrolyzers
     private ADMMDataModel dataModel;
-    private double rho; // Wird hier zwar nicht verwendet, aber beibehalten
     private Predicate<Electrolyzer> filterCriteria;
     private int currentRTOIteration;
     private Period currentSWOPeriod;
@@ -24,15 +19,13 @@ public class RTO_SUpdateBehaviour extends OneShotBehaviour {
     
     private int rtoStepsPerSWOPeriod = 10;
 
-    // Konstruktor
+    // Constructor
     public RTO_SUpdateBehaviour(GRBModel model, Parameters params, Set<Electrolyzer> electrolyzers, 
             Period currentSWOPeriod, int finalSWOIteration, ADMMDataModel dataModel, double rho, 
             Predicate<Electrolyzer> filterCriteria, int RTOIteration) {
-        this.model = model;
         this.params = params;
         this.electrolyzers = electrolyzers;
         this.dataModel = dataModel;
-        this.rho = rho;
         this.filterCriteria = filterCriteria;
         this.currentRTOIteration = RTOIteration;
         this.currentSWOPeriod = currentSWOPeriod;
@@ -41,34 +34,34 @@ public class RTO_SUpdateBehaviour extends OneShotBehaviour {
     
     @Override
     public void action() {
-        // Filtere die Elektrolyseure, die betrachtet werden sollen
+        // Filter the electrolyzers that should be considered
         Set<Electrolyzer> filteredElectrolyzers = filterElectrolyzers(electrolyzers, filterCriteria);
         
         System.out.println("s-Update von " + myAgent.getLocalName() 
             + " in RTO-Iteration: " + currentRTOIteration );
         
-        // Für jeden gefilterten Elektrolyseur:
+        // For each filtered electrolyzer:
         for (Electrolyzer e : filteredElectrolyzers) {
             int electrolyzerID = e.getId() - 1;
-            // X-Werte und Y-Werte für die aktuelle Iteration abrufen
+            // Retrieve X-values and Y-values for the current iteration
             double[] xValues = dataModel.getXRTOValuesForAgent(currentRTOIteration + 1, electrolyzerID);
             boolean[][] yValues = dataModel.getYSWOValuesForAgent(finalSWOIteration, electrolyzerID);
-            // Bestimme den Produktionszustand einmalig – hier verwenden wir den Wert für den aktuellen SWO-Zeitschritt:
+            // Determine the production state once - here we use the value for the current SWO time step:
             boolean isProduction = yValues[currentSWOPeriod.getT() - 1][State.PRODUCTION.ordinal()];
             double productionYValue = isProduction ? 1.0 : 0.0;
             
-            // Für jede Periode:
+            // For each period:
             for (int t = 1; t <= rtoStepsPerSWOPeriod; t++) {
                 int periodIndex = t - 1;
-                // Berechne s-Werte gemäß den Formeln:
+                // Calculate s-values according to the formulas:
                 double s1 = xValues[periodIndex] - params.minOperation.get(e) * productionYValue;
                 s1 = Math.max(s1, 0);
                 
-                // Für die obere Schranke gilt: x - x_max*y + s2 = 0  =>  s2 = x_max*y - x
+                // For the upper bound: x - x_max*y + s2 = 0  =>  s2 = x_max*y - x
                 double s2 = params.maxOperation.get(e) * productionYValue - xValues[periodIndex];
                 s2 = Math.max(s2, 0);
                 
-                // Speichern der s-Werte in dataModel:
+                // Save s-values in dataModel:
                 dataModel.saveSRTOValueForPeriod(currentRTOIteration + 1, electrolyzerID, periodIndex, 0, s1);
                 dataModel.saveSRTOValueForPeriod(currentRTOIteration + 1, electrolyzerID, periodIndex, 1, s2);
                 
@@ -76,7 +69,7 @@ public class RTO_SUpdateBehaviour extends OneShotBehaviour {
         }
     }
     
-    // Methode zum Filtern der Elektrolyseure basierend auf einem Kriterium
+    // Method for filtering electrolyzers based on a criterion
     private Set<Electrolyzer> filterElectrolyzers(Set<Electrolyzer> electrolyzers, Predicate<Electrolyzer> filterCriteria) {
         Set<Electrolyzer> filteredSet = new HashSet<>();
         for (Electrolyzer electrolyzer : electrolyzers) {
@@ -87,12 +80,12 @@ public class RTO_SUpdateBehaviour extends OneShotBehaviour {
         return filteredSet;
     }
     
-    // Optional: Eine Methode zur Ausgabe der Werte (falls benötigt)
+    // Optional: A method for outputting the values (if needed)
     public void printElectrolyzerValues() {
-        System.out.println("\n===== Ausgabe der X-, Y- und S-Werte =====\n");
+        System.out.println("\n===== Output of X-, Y- and S-values =====\n");
         for (Electrolyzer e : electrolyzers) {
             int electrolyzerID = e.getId() - 1;
-            System.out.println("Elektrolyseur ID: " + (electrolyzerID + 1));
+            System.out.println("Electrolyzer ID: " + (electrolyzerID + 1));
             double[] xValues = dataModel.getXRTOValuesForAgent(currentRTOIteration + 1, electrolyzerID);
             boolean[][] yValues = dataModel.getYSWOValuesForAgent(finalSWOIteration, electrolyzerID);
             boolean production = yValues[currentSWOPeriod.getT() - 1][State.PRODUCTION.ordinal()];

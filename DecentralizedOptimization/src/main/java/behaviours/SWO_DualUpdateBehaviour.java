@@ -18,7 +18,7 @@ public class SWO_DualUpdateBehaviour extends OneShotBehaviour {
 
     private static final long serialVersionUID = 1L;
     private Parameters params;
-    private Set<Electrolyzer> electrolyzers; // Set von Elektrolyseuren
+    private Set<Electrolyzer> electrolyzers; // Set of electrolyzers
     private Set<Period> periods;
     private int iteration;
     private ADMMDataModel dataModel;
@@ -28,7 +28,7 @@ public class SWO_DualUpdateBehaviour extends OneShotBehaviour {
     private double rho;
     private long startTime;
 
-    // Konstruktor
+    // Constructor
     public SWO_DualUpdateBehaviour(Parameters params, Set<Electrolyzer> electrolyzers, Set<Period> periods, int iteration, ADMMDataModel dataModel, double rho, Predicate<Electrolyzer> filterCriteria) {
         this.params = params;
         this.electrolyzers = electrolyzers;
@@ -45,10 +45,10 @@ public class SWO_DualUpdateBehaviour extends OneShotBehaviour {
     	
     	startTime = System.nanoTime();  // Start time measurement
     	
-        // Filtere die Elektrolyseure, die betrachtet werden sollen
+        // Filter the electrolyzers that should be considered
         Set<Electrolyzer> filteredElectrolyzers = filterElectrolyzers(electrolyzers, filterCriteria);
 
-        // Führe das Dual-Update gebündelt für die gefilterten Elektrolyseure durch
+        // Perform the dual update bundled for the filtered electrolyzers
         Map<Integer, double[][]> updatedUValuesMap = new HashMap<>();
         
 
@@ -59,19 +59,19 @@ public class SWO_DualUpdateBehaviour extends OneShotBehaviour {
             }
         }
 
-        // Speichern der neuen U-Werte für alle gefilterten Elektrolyseure im ADMMDataModel
+        // Save the new U-values for all filtered electrolyzers in ADMMDataModel
         for (Map.Entry<Integer, double[][]> entry : updatedUValuesMap.entrySet()) {
             dataModel.saveUSWOValuesForAgent(iteration + 1, entry.getKey(), entry.getValue());
         }
 
-        // Senden der gebündelten Dual-Update-Ergebnisse nach Berechnung
+        // Send the bundled dual update results after calculation
         sendBundledDualUpdateResults(filteredElectrolyzers, periods, iteration);
         
         dualUpdateTime = System.nanoTime() - startTime; 
         dataModel.saveDualUpdateTimeForIteration(iteration, dualUpdateTime);
     }
 
-    // Methode zum Filtern der Elektrolyseure basierend auf einem Kriterium
+    // Method for filtering electrolyzers based on a criterion
     private Set<Electrolyzer> filterElectrolyzers(Set<Electrolyzer> electrolyzers, Predicate<Electrolyzer> filterCriteria) {
         Set<Electrolyzer> filteredSet = new HashSet<>();
         for (Electrolyzer electrolyzer : electrolyzers) {
@@ -88,19 +88,19 @@ public class SWO_DualUpdateBehaviour extends OneShotBehaviour {
         int nextIteration = iteration + 1;
         int electrolyzerID = electrolyzer.getId() - 1;
 
-        // Zugriff auf X, Y, S Werte für die aktuelle Iteration aus dem ADMMDataModel
+        // Access to X, Y, S values for the current iteration from ADMMDataModel
         double[] xValues = dataModel.getXSWOValuesForAgent(nextIteration, electrolyzerID);
         boolean[][] yValues = dataModel.getYSWOValuesForAgent(nextIteration, electrolyzerID);
         double[][] sValues = dataModel.getSSWOValuesForAgent(nextIteration, electrolyzerID);
         double[][] uValues = dataModel.getUSWOValuesForAgent(iteration, electrolyzerID);
 
-        // Speicher für neue U-Werte (drei Werte pro Periode)
+        // Storage for new U-values (three values per period)
         double[][] newUValues = new double[periods.size()][3];
 
         for (Period t : periods) {
             int periodIndex = t.getT() - 1;
 
-            // Zugriff auf die Konstanten für die Berechnung
+            // Access to the constants for the calculation
             double xValue = xValues[periodIndex];
             double productionYValue = yValues[periodIndex][State.PRODUCTION.ordinal()] ? 1.0 : 0.0;
             double opMin = params.minOperation.get(electrolyzer);
@@ -117,7 +117,7 @@ public class SWO_DualUpdateBehaviour extends OneShotBehaviour {
             // Schwellenwert definieren
             double threshold = 1e-6;
             
-            // Überprüfung der Residualwerte gegen den Schwellenwert
+            // Check residual values against threshold
             residual1 = Math.abs(residual1) < threshold ? 0.0 : residual1;
             residual2 = Math.abs(residual2) < threshold ? 0.0 : residual2;
             residual3 = Math.abs(residual3) < threshold ? 0.0 : residual3;
@@ -138,7 +138,7 @@ public class SWO_DualUpdateBehaviour extends OneShotBehaviour {
         StringBuilder content = new StringBuilder();
         content.append("dualUpdateMessage;").append(iteration).append(";");
 
-        // Für jeden Elektrolyseur und jede Periode füge die Daten hinzu
+        // For each electrolyzer and each period add the data
         for (Electrolyzer e : filteredElectrolyzers) {
             for (Period t : periods) {
                 int electrolyzerID = e.getId() - 1;
@@ -150,7 +150,7 @@ public class SWO_DualUpdateBehaviour extends OneShotBehaviour {
                 boolean[][] yValues = dataModel.getYSWOValuesForAgent(iteration + 1, electrolyzerID);
                 double[] residuals = dataModel.getYSWOResiduals(iteration, electrolyzerID, periodIndex);
 
-                // Füge die Daten für den aktuellen Elektrolyseur und die Periode hinzu
+                // Add the data for the current electrolyzer and period
                 content.append(e.getId()).append(",")  // Elektrolyseur-ID
                        .append(t.getT()).append(",")   // Periode
                        .append(uValues[periodIndex][0]).append(",")  // Residual 1
@@ -183,7 +183,7 @@ public class SWO_DualUpdateBehaviour extends OneShotBehaviour {
         // Setze den Nachrichtentext
         msg.setContent(content.toString());
 
-        // Nachricht an alle Empfänger im Telefonbuch senden
+        // Send message to all recipients in phone book
         List<AID> phoneBook = dataModel.getPhoneBook();
         for (AID recipient : phoneBook) {
             if (!recipient.equals(myAgent.getAID())) {

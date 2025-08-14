@@ -3,7 +3,7 @@ package behaviours;
 import jade.core.behaviours.OneShotBehaviour;
 
 import java.util.*;
-import java.util.function.Predicate; // Verwende Predicate für Filterkriterien
+import java.util.function.Predicate; 
 
 import com.gurobi.gurobi.*;
 
@@ -19,14 +19,14 @@ public class SWO_SUpdateBehaviour extends OneShotBehaviour {
     private static final long serialVersionUID = 1L;
     private GRBModel model;
     private Parameters params;
-    private Set<Electrolyzer> electrolyzers; // Set von Elektrolyseuren
+    private Set<Electrolyzer> electrolyzers; // Set of electrolyzers
     private Set<Period> periods;
     private int iteration;
     private ADMMDataModel dataModel;
     private double rho;
-    private Predicate<Electrolyzer> filterCriteria; // Filterkriterium für Elektrolyseure
+    private Predicate<Electrolyzer> filterCriteria; // Filter criteria for electrolyzers
     
-    // Konstruktor
+    // Constructor
     public SWO_SUpdateBehaviour(GRBModel model, Parameters params, Set<Electrolyzer> electrolyzers, Set<Period> periods, int iteration, ADMMDataModel dataModel, double rho, Predicate<Electrolyzer> filterCriteria) {
         this.model = model;
         this.params = params;
@@ -44,10 +44,10 @@ public class SWO_SUpdateBehaviour extends OneShotBehaviour {
     	
     	long startTime = System.nanoTime();  // Start time measurement
         try {
-            // Filtere die Elektrolyseure, die betrachtet werden sollen
+            // Filter the electrolyzers that should be considered
             Set<Electrolyzer> filteredElectrolyzers = filterElectrolyzers(electrolyzers, filterCriteria);
             
-            // Initialisiere Variablen für alle gefilterten Elektrolyseure und Perioden
+            // Initialize variables for all filtered electrolyzers and periods
             Map<Electrolyzer, Map<Period, GRBVar[]>> allSVars = new HashMap<>();
             GRBQuadExpr quadraticPenalty = new GRBQuadExpr();
 
@@ -56,7 +56,7 @@ public class SWO_SUpdateBehaviour extends OneShotBehaviour {
                 int electrolyzerID = electrolyzer.getId() - 1;
                 allSVars.put(electrolyzer, new HashMap<>());
 
-                // X- und Y-Werte für die aktuelle Iteration abrufen
+                // Retrieve X- and Y-values for the current iteration
                 double[] xValues = dataModel.getXSWOValuesForAgent(iteration + 1, electrolyzerID);
                 if (xValues == null) {
                     xValues = new double[periods.size()];
@@ -79,7 +79,7 @@ public class SWO_SUpdateBehaviour extends OneShotBehaviour {
                     double opMax = params.maxOperation.get(electrolyzer);
 
                     // Residual 1
-                    if (productionYValue > 0) { // Nur aktiv, wenn im Zustand Production
+                    if (productionYValue > 0) { // Only active when in Production state
                         GRBLinExpr residual1 = new GRBLinExpr();
                         residual1.addConstant(-xValue);
                         residual1.addConstant(opMin * productionYValue);
@@ -89,12 +89,12 @@ public class SWO_SUpdateBehaviour extends OneShotBehaviour {
                         GRBVar residual1Var = model.addVar(-GRB.INFINITY, GRB.INFINITY, 0.0, GRB.CONTINUOUS, "residual1_" + electrolyzerID + "_" + t.getT());
                         model.addConstr(residual1Var, GRB.EQUAL, residual1, "residual1_constr_" + electrolyzerID + "_" + t.getT());
 
-                        // Quadratische Strafen zur Zielfunktion hinzufügen
+                        // Add quadratic penalties to objective function
                         quadraticPenalty.addTerm(rho / 2, residual1Var, residual1Var);
                     }
                     
                     // Residual 2
-                    if (productionYValue > 0) { // Nur aktiv, wenn im Zustand Production
+                    if (productionYValue > 0) { // Only active when in Production state
                         GRBLinExpr residual2 = new GRBLinExpr();
                         residual2.addConstant(xValue);
                         residual2.addConstant(-opMax * productionYValue);

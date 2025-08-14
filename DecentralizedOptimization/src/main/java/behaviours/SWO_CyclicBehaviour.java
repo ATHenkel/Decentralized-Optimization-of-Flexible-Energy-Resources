@@ -22,8 +22,8 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
     private static final long serialVersionUID = 1L;
     private int receivedXMessages = 0;
     private int receivedDualMessages = 0;
-    private int receivedConvergenceMessages = 0; // Zähler für Konvergenznachrichten
-    private final int totalNumberADMMAgents; // Die Anzahl der Agenten im System
+    private int receivedConvergenceMessages = 0; // Counter for convergence messages
+    private final int totalNumberADMMAgents; // Number of agents in the system
     private GRBModel model;
     private Parameters parameters;
     private ADMMDataModel dataModel;
@@ -49,7 +49,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 
     @Override
     public void action() {
-        // Initialisierung für die erste Iteration
+        // Initialization for the first iteration
         if (!isFirstXUpdateDone) {
         	dataModel.setStartComputationTime(System.nanoTime());
             executeSWO_XUpdate();
@@ -57,14 +57,14 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
             return;
         }
 
-        // Stop, wenn maximale Iterationen erreicht sind
+        // Stop when maximum iterations are reached
         if (swoIterationCount >= maxIterations) {
-            System.out.println("Maximale Iterationszahl erreicht. Agent " + myAgent.getLocalName() + " beendet den ADMM-Zyklus.");
+            System.out.println("Maximum iteration count reached. Agent " + myAgent.getLocalName() + " terminates the ADMM cycle.");
             saveSWOResultsAndTerminate();
             return;
         }
 
-        // Nachricht empfangen und verarbeiten
+        // Receive and process message
         ACLMessage msg = myAgent.receive();
         if (msg != null) {
             processSWOMessage(msg);
@@ -74,7 +74,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
     }
 
     /**
-     * Verarbeitet eine eingehende Nachricht basierend auf ihrem Typ.
+     * Processes an incoming message based on its type.
      */
     private void processSWOMessage(ACLMessage msg) {
         String content = msg.getContent();
@@ -93,7 +93,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
     }
 
     /**
-     * Prüft, ob alle X-Update-Nachrichten empfangen wurden.
+     * Checks if all X-update messages have been received.
      */
     private void checkSWO_XUpdateCompletion() {
         if (receivedXMessages == totalNumberADMMAgents - 1) {
@@ -109,10 +109,10 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
         	dataModel.saveReceivedDualMessagesForIteration(swoIterationCount, receivedDualMessages);
         	receivedDualMessages = 0;
         	
-        	// Residuen berechnen
+        	        // Calculate residuals
             calculateBoundaryResiduals();
 
-            // Prüfe Konvergenz
+            // Check convergence
             if (checkFeasibility() && swoIterationCount > 0) {
             	savePurchasedGridEnergy();
             	sendConvergenceMessage();
@@ -152,7 +152,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
         receivedConvergenceMessages++;
         if (receivedConvergenceMessages == totalNumberADMMAgents - 1) {
         	
-           	//Save Results and Terminate SWO Optimization
+           	        // Save Results and Terminate SWO Optimization
             saveSWOResultsAndTerminate();
         	
         }
@@ -196,7 +196,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
     
     private void savePurchasedGridEnergy() {
         for (Period period : periods) {
-            double totalElectrolyzerEnergy = 0.0;  // <-- Hier wird die Variable für jede Periode zurückgesetzt!
+            double totalElectrolyzerEnergy = 0.0;  // <-- Variable is reset for each period!
 
             double renewableEnergyForCurrentPeriod = parameters.renewableEnergyForecast.get(period);
 
@@ -209,7 +209,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 
             double purchasedGridEnergy = totalElectrolyzerEnergy - renewableEnergyForCurrentPeriod;
 
-            // Speichern der berechneten Werte
+            // Save the calculated values
             parameters.totalElectrolyzerEnergy.put(period, totalElectrolyzerEnergy);
             parameters.purchasedGridEnergy.put(period, purchasedGridEnergy);
         }
@@ -223,11 +223,11 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
             int iteration = Integer.parseInt(parts[1]);
             for (int i = 2; i < parts.length; i++) {
                 String[] resultParts = parts[i].split(",");
-                if (resultParts.length >= 13) { // U-Werte (3), S-Werte (2), Residuals (3), Y-Werte
+                if (resultParts.length >= 13) { // U-values (3), S-values (2), Residuals (3), Y-values
                     int electrolyzerID = Integer.parseInt(resultParts[0]) - 1;
                     int periodIndex = Integer.parseInt(resultParts[1]) - 1;
 
-                    // Speichere U-Werte
+                    // Save U-values
                     double u1 = Double.parseDouble(resultParts[2]);
                     double u2 = Double.parseDouble(resultParts[3]);
                     double u3 = Double.parseDouble(resultParts[4]);
@@ -235,20 +235,20 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
                     dataModel.saveUSWOValueForAgentPeriod(iteration + 1, electrolyzerID, periodIndex, 1, u2);
                     dataModel.saveUSWOValueForAgentPeriod(iteration + 1, electrolyzerID, periodIndex, 2, u3);
 
-                    // Speichere S-Werte
+                    // Save S-values
                     double s1 = Double.parseDouble(resultParts[5]);
                     double s2 = Double.parseDouble(resultParts[6]);
                     dataModel.saveSSWOValueForPeriod(iteration + 1, electrolyzerID, periodIndex, 0, s1);
                     dataModel.saveSSWOValueForPeriod(iteration + 1, electrolyzerID, periodIndex, 1, s2);
 
-                    // Speichere Residuals
+                    // Save Residuals
                     double residual1 = Double.parseDouble(resultParts[7]);
                     double residual2 = Double.parseDouble(resultParts[8]);
                     double residual3 = Double.parseDouble(resultParts[9]);
                     dataModel.saveYResiduals(iteration, electrolyzerID, periodIndex, 
                         new double[]{residual1, residual2, residual3});
 
-                    // Speichere Y-Werte für jeden Zustand
+                    // Save Y-values for each state
                     boolean[] yValues = new boolean[State.values().length];
                     for (int j = 0; j < State.values().length; j++) {
                         yValues[j] = resultParts[10 + j].equals("1");
@@ -294,14 +294,13 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
             }
             
             if (desktopPath == null || desktopPath.isEmpty()) {
-                desktopPath = Paths.get(System.getProperty("user.home"), "Desktop").toString(); // Standardpfad
+                desktopPath = Paths.get(System.getProperty("user.home"), "Desktop").toString(); // Standard path
             }
 
-            String excelFilePathIterationResults = desktopPath + "/" + saveDetails + "_ADMM_Results_" + myAgent.getLocalName() + ".xlsx";
             String excelFilePathFinalResults = desktopPath + "/" + saveDetails + "_FinalSWOResults_" + myAgent.getLocalName() + ".xlsx";
-
+            dataModel.exportFinalIterationResultsToExcel(swoIterationCount, parameters.getElectrolyzers(), parameters.getPeriods(), parameters, excelFilePathFinalResults);
             
-            // Exportiere alle Variablen pro Elektrolyseur in separate Excel-Dateien
+            // Export all variables per electrolyzer to separate Excel files
             try {
                 String baseFilePath = desktopPath + "/" + saveDetails + "_ADMM_Variables_Iteration_" + swoIterationCount;
                 dataModel.exportAllVariablesPerElectrolyzerToExcel(
@@ -317,7 +316,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
             }
 
             /* 
-            // Export der finalen Ergebnisse
+            // Export of final results
             dataModel.exportFinalIterationResultsToExcel(swoIterationCount, parameters.getElectrolyzers(), parameters.getPeriods(), parameters, excelFilePathFinalResults);
             
             System.out.println("Starting RTO Optimization Behaviour...");
@@ -330,19 +329,19 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
                 electrolyzers,
                 7,  
                 rho,
-                swoIterationCount //entspricht finaler Iteration
+                swoIterationCount // corresponds to final iteration
             ));*/
             
             System.out.println("Entferne SWO-Cyclic Behaviour für Agent: " + myAgent.getLocalName());
             myAgent.removeBehaviour(this);
 
             
-//            // Export der Iterationsdaten
+//            // Export of iteration data
 //            dataModel.writeValuesToExcel_Distributed(excelFilePathIterationResults);
 //
-//            System.out.println("Ergebnisse erfolgreich gespeichert:");
-//            System.out.println("Iterationsdaten: " + excelFilePathIterationResults);
-//            System.out.println("Finale Ergebnisse: " + excelFilePathFinalResults);
+//            System.out.println("Results successfully saved:");
+//            System.out.println("Iteration data: " + excelFilePathIterationResults);
+//            System.out.println("Final results: " + excelFilePathFinalResults);
         } catch (Exception e) {
             System.err.println("Fehler beim Schreiben der Excel-Dateien: " + e.getMessage());
             e.printStackTrace();
@@ -350,7 +349,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
     }
     
     private void calculateBoundaryResiduals() {
-        double dualResidual = 0.0; // Summe der Primärresiduen
+        double dualResidual = 0.0; // Sum of primary residuals
 
         for (Electrolyzer e : dataModel.getAllElectrolyzers()) {
             int agentIndex = e.getId() - 1;
@@ -358,34 +357,34 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
             for (Period t : periods) {
                 int periodIndex = t.getT() - 1;
 
-                // Werte aus dem DataModel
+                // Values from DataModel
                 double xValue = dataModel.getXSWOValueForAgentPeriod(swoIterationCount, agentIndex, periodIndex);
                 boolean isProducing = dataModel.getYSWOValuesForAgent(swoIterationCount, agentIndex)[periodIndex][State.PRODUCTION.ordinal()];
 
-                // Berechnung der Grenzwerte
+                // Calculation of boundary values
                 double opMin = e.getMinOperation();
                 double opMax = e.getMaxOperation();
 
-                // Berechnung des Primärresiduums
+                // Calculation of primary residual
                 if (isProducing) {
                     double lowerBoundary = opMin;
                     double upperBoundary = opMax;
 
-                    // Verletzungen der unteren Grenze
+                    // Violations of lower boundary
                     if (xValue < lowerBoundary) {
                         double violation = lowerBoundary - xValue;
                         dualResidual += violation * violation;
                     }
 
-                    // Verletzungen der oberen Grenze
+                    // Violations of upper boundary
                     if (xValue > upperBoundary) {
                         double violation = xValue - upperBoundary;
                         dualResidual += violation * violation;
                     }
                 } else {
-                    // Prüfen, ob x > 0 ist, obwohl der Zustand Production nicht aktiv ist
+                    // Check if x > 0 even though the Production state is not active
                     if (xValue > 0) {
-                        double violation = xValue; // Wert von x direkt als Verletzung
+                        double violation = xValue; // Value of x directly as violation
                         dualResidual += violation * violation;
                     }
                 }
@@ -394,7 +393,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 
         dualResidual = Math.sqrt(dualResidual);
 
-        // Speichere die Residuen im DataModel
+        // Save the residuals in DataModel
         dataModel.saveDualResidualForIteration(swoIterationCount, dualResidual);
     }
    
@@ -403,18 +402,17 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 
 	    System.out.println("Überprüfe Zulässigkeit nach Iteration " + admmIter);
 
-	    double tolerancePercentage = 0.0005; // 0,5% Toleranz erlaubt
-	    double zeroTolerance = 0.01; // Feste Toleranz, wenn Grenzwert Null ist
+	            double tolerancePercentage = 0.0005; // 0.5% tolerance allowed
+        double zeroTolerance = 0.01; // Fixed tolerance when boundary value is zero
 
 	    double[][] xValues = dataExchange.getXSWOValuesForIteration(admmIter);
 	    boolean[][][] yValues = dataExchange.getYSWOValuesForIteration(admmIter);
 	    boolean feasible = true;
 	    
 	    Set<Electrolyzer> electrolyzers = dataExchange.getAllElectrolyzers();
+	    double objectiveValue = 0.0; // Collect objective function value
 
-	    double objectiveValue = 0.0; // Zielfunktionswert sammeln
-
-	    // Überprüfung der Gültigkeit und Berechnung des Zielfunktionswertes
+	            // Validation check and calculation of objective function value
 	    for (Electrolyzer electrolyzer : electrolyzers) {
 	        int agentIndex = electrolyzer.getId() - 1;
 	        double powerElectrolyzer = params.powerElectrolyzer.get(electrolyzer);
@@ -429,22 +427,22 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	            double x = xValues[agentIndex][periodIndex];
 	            boolean[] y = yValues[agentIndex][periodIndex];
 
-	            // Berechnung des Zielfunktionswertes
+	            // Calculation of objective function value
 	            objectiveValue += x * powerElectrolyzer * electricityPrice * intervalLength;
 	            objectiveValue += y[State.STARTING.ordinal()] ? startupCost * intervalLength : 0.0;
 	            objectiveValue += y[State.STANDBY.ordinal()] ? standbyCost * intervalLength : 0.0;
 
-	            // Nebenbedingung 1: Summe der y-Variablen gleich 1
+	            // Constraint 1: Sum of y-variables equals 1
 	            int ySum = 0;
 	            for (boolean yVal : y) {
 	                ySum += yVal ? 1 : 0;
 	            }
-	            double ySumTolerance = tolerancePercentage; // Toleranz für Summenbedingung
+	            double ySumTolerance = tolerancePercentage; // Tolerance for sum condition
 	            if (Math.abs(ySum - 1) > ySumTolerance) {
 	                feasible = false;
 	            }
 
-	            // Nebenbedingung 2: x ≥ 0
+	            // Constraint 2: x ≥ 0
 	            double lowerBound = 0.0;
 	            double lowerTolerance = (lowerBound == 0.0) ? zeroTolerance : tolerancePercentage * Math.abs(lowerBound);
 	            if (x < lowerBound - lowerTolerance) {
@@ -452,7 +450,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	                feasible = false;
 	            }
 
-	            // Nebenbedingung 3: x ≤ maxOperation * y_PRODUCTION + standbyLoad * y_STANDBY
+	            // Constraint 3: x ≤ maxOperation * y_PRODUCTION + standbyLoad * y_STANDBY
 	            double opMax = params.maxOperation.get(electrolyzer);
 	            double standbyLoad = 0;
 	            double xUpperBound = opMax * (y[State.PRODUCTION.ordinal()] ? 1 : 0)
@@ -465,14 +463,14 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	                feasible = false;
 	            }
 
-	            // Nebenbedingung 4: x ≥ minOperation * y_PRODUCTION + standbyLoad * y_STANDBY
+	            // Constraint 4: x ≥ minOperation * y_PRODUCTION + standbyLoad * y_STANDBY
 	            double minOperation = params.minOperation.get(electrolyzer);
 	            double xLowerBound = minOperation * (y[State.PRODUCTION.ordinal()] ? 1 : 0)
 	                               + standbyLoad * (y[State.STANDBY.ordinal()] ? 1 : 0);
 	            boolean[] currentState = yValues[agentIndex][periodIndex];
 	            
 	            String activeState = "Unknown";
-	            // Finde den aktiven Zustand
+	            // Find the active state
 	            for (State state : State.values()) {
 	                if (currentState[state.ordinal()]) {
 	                    activeState = state.name();
@@ -489,14 +487,14 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	                    + " (Zustand: " + activeState + ")");
 	                feasible = false;
 	            }
-	            // Zustandsübergangsbedingungen
+	            // State transition conditions
 	            if (period.getT() > 1) {
 	                int prevPeriodIndex = periodIndex - 1;
 
-	                // Hole y-Werte der vorherigen Periode
+	                // Get y-values of previous period
 	                boolean[] yPrev = yValues[agentIndex][prevPeriodIndex];
 
-	                // Nebenbedingung: y_t,STARTING ≤ y_{t-1,IDLE} + y_{t-1,STARTING}
+	                // Constraint: y_t,STARTING ≤ y_{t-1,IDLE} + y_{t-1,STARTING}
 	                boolean lhs_STARTING = y[State.STARTING.ordinal()];
 	                boolean rhs_STARTING = yPrev[State.IDLE.ordinal()] || yPrev[State.STARTING.ordinal()];
 	                if (lhs_STARTING && !rhs_STARTING) {
@@ -504,7 +502,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	                    feasible = false;
 	                }
 
-	                // Nebenbedingung: y_t,PRODUCTION ≤ y_{t-1,PRODUCTION} + y_{t-1,STANDBY} + y_{t-startupDuration,STARTING}
+	                // Constraint: y_t,PRODUCTION ≤ y_{t-1,PRODUCTION} + y_{t-1,STANDBY} + y_{t-startupDuration,STARTING}
 	                boolean lhs_PRODUCTION = y[State.PRODUCTION.ordinal()];
 	                boolean rhs_PRODUCTION = yPrev[State.PRODUCTION.ordinal()] || yPrev[State.STANDBY.ordinal()];
 	                int startingHoldingDuration = params.holdingDurations.get(electrolyzer).get(State.STARTING);
@@ -519,7 +517,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	                    feasible = false;
 	                }
 
-	                // Nebenbedingung: y_t,STANDBY ≤ y_{t-1,PRODUCTION} + y_{t-1,STANDBY}
+	                // Constraint: y_t,STANDBY ≤ y_{t-1,PRODUCTION} + y_{t-1,STANDBY}
 	                boolean lhs_STANDBY = y[State.STANDBY.ordinal()];
 	                boolean rhs_STANDBY = yPrev[State.PRODUCTION.ordinal()] || yPrev[State.STANDBY.ordinal()];
 	                if (lhs_STANDBY && !rhs_STANDBY) {
@@ -527,7 +525,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	                    feasible = false;
 	                }
 
-	                // Nebenbedingung: y_t,IDLE ≤ y_{t-1,IDLE} + y_{t-1,PRODUCTION} + y_{t-1,STANDBY}
+	                // Constraint: y_t,IDLE ≤ y_{t-1,IDLE} + y_{t-1,PRODUCTION} + y_{t-1,STANDBY}
 	                boolean lhs_IDLE = y[State.IDLE.ordinal()];
 	                boolean rhs_IDLE = yPrev[State.IDLE.ordinal()] || yPrev[State.PRODUCTION.ordinal()] || yPrev[State.STANDBY.ordinal()];
 	                if (lhs_IDLE && !rhs_IDLE) {
@@ -535,22 +533,22 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	                    feasible = false;
 	                }
 	                
-					// Rampen-Raten:
-					double rampTolerance = 0.001; // Beispielwert für eine feste Toleranz
-					// Rampenrate-Bedingung: Nur prüfen, wenn der Agent in der aktuellen Periode in Produktion ist
+					        // Ramp rates:
+					        double rampTolerance = 0.001; // Example value for a fixed tolerance
+                   // Ramp rate condition: Only check if the agent is in production in the current period
 					if (y[State.PRODUCTION.ordinal()]) {
 					    double currentXValue = xValues[agentIndex][periodIndex];
 					    double previousXValue = xValues[agentIndex][prevPeriodIndex];
 
-					    // Berechne die Differenz (Rampenresidual) zwischen aktuellem und vorherigem x-Wert
+					            // Calculate the difference (ramp residual) between current and previous x-value
 					    double diff1 = Math.abs(currentXValue - previousXValue);
 					    double rampRate = params.getRampRate(electrolyzer);
 					    		
-					    // Berechnung der zulässigen Rampenrate mit Toleranz
+					                            // Calculation of allowed ramp rate with tolerance
 					    double upperRampTolerance = (rampRate == 0.0) ? rampTolerance : rampTolerance * Math.abs(rampRate);
 					    double rampUpConstraint1 = rampRate;
 
-					    // Überprüfung auf Verletzung der Rampenrate
+					                            // Check for ramp rate violation
 					    if (diff1 > rampUpConstraint1 + upperRampTolerance) {
 					        System.out.println("Rampenratenverletzung (Bedingung 1): x_{a," + period.getT() + "} (" + currentXValue
 					                + ") - x_{a," + (period.getT() - 1) + "} (" + previousXValue + ") überschreitet RampRateMax ("
@@ -581,10 +579,10 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	            double x = xValues[agentID][periodIndex];
 	            double intervalLength = params.intervalLengthSWO;
 
-	            // Umwandlung von boolean in 0 (false) oder 1 (true)
+	            // Conversion from boolean to 0 (false) or 1 (true)
 	            int isProductionActive = y[State.PRODUCTION.ordinal()] ? 1 : 0;
 
-	            // Berechnung der Produktion: intercept wird nur verwendet, wenn isProductionActive == 1
+	            // Calculation of production: intercept is only used when isProductionActive == 1
 	            productionSum += intervalLength * (x * slope * powerElectrolyzer + intercept * isProductionActive);
 	        }
 

@@ -1,19 +1,12 @@
 package behaviours;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
 import com.gurobi.gurobi.*;
-import jade.core.AID;
 import jade.core.behaviours.OneShotBehaviour;
-import jade.lang.acl.ACLMessage;
 import models.ADMMDataModel;
 import models.Electrolyzer;
 import models.Parameters;
@@ -60,7 +53,7 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
     }
 
     private void initializeVariablesAndConstraints() {
-        // Filtere die Elektrolyseure, die betrachtet werden sollen
+        // Filter the electrolyzers that should be considered
         Set<Electrolyzer> filteredElectrolyzers = filterElectrolyzers(electrolyzers, filterCriteria);
         try {
             yVars = new HashMap<>();
@@ -84,7 +77,7 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
                 }
             }
 
-            // Nebenbedingungen: Zustandstransitionen und Mindesthalterdauern
+            // Constraints: State transitions and minimum holding durations
             for (Electrolyzer e : electrolyzers) {
                 int electrolyzerID = e.getId() - 1;
 
@@ -255,7 +248,7 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
                     // Residual 3 (yResidual) Wert
                     double residual3Value = residual3Vars.get(e).get(t).get(GRB.DoubleAttr.X);
 
-                    // Array für die Residual-Werte in der Datenstruktur speichern
+                    // Save array for residual values in data structure
                     double[] residuals = new double[]{residual1Value, residual2Value, residual3Value};
                     dataModel.saveYResiduals(iteration, electrolyzerID, periodIndex, residuals);
             }

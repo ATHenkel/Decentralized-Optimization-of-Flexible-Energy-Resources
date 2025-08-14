@@ -17,7 +17,6 @@ import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.SequentialBehaviour;
 import jade.core.behaviours.WakerBehaviour;
 import jade.lang.acl.ACLMessage;
-import jnr.ffi.Struct.int16_t;
 import models.ADMMDataModel;
 import models.Electrolyzer;
 import models.Parameters;
@@ -31,12 +30,11 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
     private int receivedDualRTOMessages = 0;
     private int receivedConvergenceRTOMessages = 0;
     private int receivedIterationIncrementedMessages = 0;
-    private final int totalNumberADMMAgents; // Die Anzahl der Agenten im System
+    private final int totalNumberADMMAgents; // Number of agents in the system
     private GRBModel model;
     private Parameters parameters;
     private ADMMDataModel dataModel;
     private Set<Electrolyzer> electrolyzers;
-    private Set<Period> periods;
     private double rho;
     private int finalSWOIteration = 0;
     private boolean isFirstRTOXUpdateDone = false; 
@@ -65,11 +63,11 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
 
     @Override
     public void action() {
-        // Initialisierung für die erste Iteration
+        // Initialization for the first iteration
         if (!isFirstRTOXUpdateDone) {
             System.out.println("Starte RTO-Optimierung für Agent: " + myAgent.getLocalName());
             
-            // Erstelle einmalig fluktuierende erneuerbare Energien:
+            // Create fluctuating renewable energies once:
             double renewableEnergySWO = parameters.getRenewableEnergy(new Period(currentSWOPeriod));
             long seed = 10;
             double[][] fluctuatingEnergy = dataModel.calculateFluctuatingRenewableEnergy(dataModel.getRtoStepsPerSWO(), renewableEnergySWO, seed);
@@ -81,7 +79,7 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
             saveDetails = timestamp;				
                         
             if (desktopPath == null || desktopPath.isEmpty()) {
-                desktopPath = Paths.get(System.getProperty("user.home"), "Desktop").toString(); // Standardpfad
+                desktopPath = Paths.get(System.getProperty("user.home"), "Desktop").toString(); // Standard path
             }
 
             String excelFilePath = desktopPath + "/" + saveDetails + "_Fluctuating_Renewable_Energy_" + myAgent.getLocalName() + ".xlsx";
@@ -98,18 +96,18 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
             return;
         }
 
-        // FIFO-Warteschlange für Nachrichtenverarbeitung
+        // FIFO queue for message processing
         while (true) {
             ACLMessage msg = myAgent.receive();
             if (msg != null) {
-                messageQueue.add(msg); // Nachricht zur FIFO-Queue hinzufügen
+                messageQueue.add(msg); // Add message to FIFO queue
             } else {
                 break;
             }
         }
 
         if (!messageQueue.isEmpty()) {
-            ACLMessage nextMessage = messageQueue.poll(); // Älteste Nachricht verarbeiten (FIFO)
+            ACLMessage nextMessage = messageQueue.poll(); // Process oldest message (FIFO)
             processRTOMessage(nextMessage);
         } else {
             block();
@@ -154,27 +152,27 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
 	 */
 
 	private void checkRTO_DualUpdateCompletion() {
-	    // Prüfe, ob alle Dual-Nachrichten empfangen wurden und ob der duale Update-Prozess als abgeschlossen gemeldet wird.
+	            // Check if all dual messages have been received and if the dual update process is reported as completed.
 	    if (receivedDualRTOMessages != totalNumberADMMAgents - 1 ) {
 	        return;
 	    }
 
-	    // Speichere die Dual-Nachrichten für die aktuelle Iteration und setze den Zähler zurück.
+	            // Save the dual messages for the current iteration and reset the counter.
 	    dataModel.saveReceivedDualMessagesForIteration(finalSWOIteration, receivedDualRTOMessages);
 	    receivedDualRTOMessages = 0;
 	    dataModel.setDualUpdateCompleted(false);
 
-	    // Berechne den absoluten EnergyBalance-Wert für die nächste Iteration.
+	            // Calculate the absolute EnergyBalance value for the next iteration.
 	    double energyBalance = Math.abs(dataModel.getEnergyBalanceResultForIteration(rtoIterationCount + 1));
 
-	    // Prüfe, ob die Konvergenzkriterien erfüllt sind:
+	            // Check if convergence criteria are met:
 	    boolean isConverged = (rtoIterationCount > 0 && energyBalance <= 0.005)
 	                          || (rtoIterationCount == dataModel.getMaxIterations() - 1);
 	    
 	    if (isConverged) {
 	        handleConvergence(energyBalance);
 	    } else if (!isConverged) {
-	        // Noch nicht konvergiert: erhöhe die Iteration und informiere die anderen Agenten.
+	        // Not yet converged: increase iteration and inform other agents.
 	        rtoIterationCount++;
 	        iterationIncremented = true;
 	        sendIncrementMessage();
@@ -190,7 +188,7 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
 	private void handleConvergence(double energyBalance) {
 	    System.out.println("Energy Balance: " + energyBalance + " Agent: " + myAgent.getLocalName());
 	    
-	    // Speichere die x-Werte für jeden Elektrolyseur und jede Periode der aktuellen Iteration.
+	            // Save the x-values for each electrolyzer and each period of the current iteration.
 	    for (Electrolyzer e : dataModel.getAllElectrolyzers()) {
 	        int agentID = e.getId() - 1;
 	        for (int t = 1; t <= rtoStepsPerSWOPeriod; t++) {
@@ -207,7 +205,7 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
 	    long finalComputationTime = System.nanoTime() - dataModel.getStartRTOComputationTime();
 	    dataModel.setFinalRTOComputationTime(finalComputationTime);
 
-	    // Erstelle den Dateipfad für den Excel-Export
+	            // Create the file path for Excel export
 	    SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd_HHmmss");
 	    String timestamp = formatter.format(new Date());
 	    String desktopPath = System.getenv("DESKTOP_PATH");
@@ -220,15 +218,15 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
 	    // Exportiere die Ergebnisse
 	    dataModel.exportXRTOResultsToExcel(excelFilePathFinalResults, rtoIterationCount, energyBalance, finalComputationTime);
 
-	    // Setze den Startzeitpunkt für die nächste Iteration
+	            // Set the start time for the next iteration
 	    long startComputationTime = System.nanoTime();
 	    dataModel.setStartRTOComputationTime(startComputationTime);
 	    
-	    // Setze den Iterationszähler zurück und erhöhe currentStartPeriod
+	            // Reset the iteration counter and increase currentStartPeriod
 	    rtoIterationCount = 0;
 	    currentStartPeriod++;
 
-	    // Starte ggf. die nächste x-Update-Phase, falls noch nicht alle RTO-Schritte bearbeitet wurden.
+	            // Start the next x-update phase if not all RTO steps have been processed yet.
 	    if (currentStartPeriod <= rtoStepsPerSWOPeriod) {
 	        if (receivedXRTOMessages == totalNumberADMMAgents - 1) {
 	        	System.err.println("Hier! Konvergenz-Fall");
@@ -261,7 +259,7 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
 	        }
 	    });
 
-	    // Verhalten dem Agenten hinzufügen
+	            // Add behavior to agent
 	    myAgent.addBehaviour(seq);
 	}
 
@@ -388,7 +386,7 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
                     dataModel.saveYResiduals(iteration, electrolyzerID, periodIndex, 
                         new double[]{residual1, residual2, residual3});
 
-                    // Speichere Y-Werte für jeden Zustand
+                    // Save Y-values for each state
                     boolean[] yValues = new boolean[State.values().length];
                     for (int j = 0; j < State.values().length; j++) {
                         yValues[j] = resultParts[10 + j].equals("1");

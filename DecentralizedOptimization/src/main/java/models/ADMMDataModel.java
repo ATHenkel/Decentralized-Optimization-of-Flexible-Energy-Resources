@@ -9,16 +9,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-
 import jade.core.AID;
-import jnr.ffi.Struct.int16_t;
 
 import org.apache.poi.ss.usermodel.*;
 
@@ -1862,7 +1859,7 @@ public class ADMMDataModel {
                     String activeState = "None";
                     boolean[][][] yValues = dataModel.getYSWO().get(finalSWOIteration);
                     for (State state : State.values()) {
-                        if (yValues[agentIndex][currentSWOPeriod-1][state.ordinal()]) { //TODO: Hier aufpassen bei der Ausgabe!
+                        if (yValues[agentIndex][currentSWOPeriod-1][state.ordinal()]) { 
                             activeState = state.name();
                             break;
                         }

@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
-
 import com.gurobi.gurobi.*;
 import jade.core.AID;
 import jade.core.behaviours.OneShotBehaviour;
@@ -38,13 +37,13 @@ public class RTO_XUpdateBehaviour extends OneShotBehaviour {
     private Map<Electrolyzer, Map<Integer, GRBVar>> residual2VarsRTO;
     private Map<Electrolyzer, Map<Integer, GRBVar>> residual3VarsRTO;
     
-    // Anzahl der Zeitschritte pro SWO-Periode (z. B. 10)
+    // Number of time steps per SWO period (e.g., 10)
     private int rtoStepsPerSWOPeriod = 10;
     
     // ------------------ ROLLING OPTIMIZATION ------------------
-    // Dieses Feld gibt an, ab welcher Periode in der aktuellen Optimierung noch optimiert wird.
-    // Zunächst werden alle Perioden optimiert (currentStartPeriod = 1). In jedem weiteren Durchlauf
-    // wird dieser Wert erhöht, sodass bereits optimierte Perioden fixiert bleiben.
+    // This field indicates from which period onwards optimization is still performed in the current optimization.
+    // Initially, all periods are optimized (currentStartPeriod = 1). In each subsequent run,
+    // this value is increased so that already optimized periods remain fixed.
     private int currentStartPeriod;
     // -----------------------------------------------------------
 
@@ -72,7 +71,7 @@ public class RTO_XUpdateBehaviour extends OneShotBehaviour {
             residual2VarsRTO = new HashMap<>();
             residual3VarsRTO = new HashMap<>();
 
-            // Initialisiere Variablen für jeden Elektrolyseur und jede Periode
+            // Initialize variables for each electrolyzer and each period
             for (Electrolyzer e : filteredElectrolyzers) {
                 xVarsRTO.put(e, new HashMap<>());
                 residual1VarsRTO.put(e, new HashMap<>());
@@ -117,12 +116,12 @@ public class RTO_XUpdateBehaviour extends OneShotBehaviour {
         Set<Electrolyzer> filteredElectrolyzers = filterElectrolyzers(electrolyzers, filterCriteria);
         
         // ------------------------- FIXIERUNG -------------------------
-        // Für alle Perioden, die bereits optimiert wurden (t < currentStartPeriod),
+        // For all periods that have already been optimized (t < currentStartPeriod),
         // werden die x-Variablen fixiert, d.h. LB und UB werden auf den zuvor gespeicherten Wert gesetzt.
         for (Electrolyzer e : filteredElectrolyzers) {
             int agentID = e.getId() - 1;
             for (int t = 1; t < currentStartPeriod; t++) {
-                // Hier rufen wir den bereits gespeicherten x-Wert (iterationsunabhängig) ab
+                // Here we retrieve the already saved x-value (iteration-independent)
                 double fixedValue = dataModel.getXRTOResultForAgentPeriod(agentID, t - 1);
                 GRBVar xVar = xVarsRTO.get(e).get(t);
                 xVar.set(GRB.DoubleAttr.LB, fixedValue);
@@ -131,7 +130,7 @@ public class RTO_XUpdateBehaviour extends OneShotBehaviour {
         }
         // -------------------------------------------------------------
         
-        // Aufbau der Zielfunktion: Nur für Perioden ab currentStartPeriod optimieren.
+        // Building the objective function: Only optimize for periods from currentStartPeriod onwards.
         GRBLinExpr objective = new GRBLinExpr();
         for (Electrolyzer e : filteredElectrolyzers) {
             for (int t = currentStartPeriod; t <= rtoStepsPerSWOPeriod; t++) {
@@ -142,14 +141,14 @@ public class RTO_XUpdateBehaviour extends OneShotBehaviour {
             }
         }
         
-        // Aufbau des Penalty-Terms für die Constraints: Nur für t ab currentStartPeriod
+        // Building the penalty term for constraints: Only for t from currentStartPeriod onwards
         GRBQuadExpr quadraticPenalty = new GRBQuadExpr();
         for (Electrolyzer e : filteredElectrolyzers) {
             for (int t = currentStartPeriod; t <= rtoStepsPerSWOPeriod; t++) {
                 int periodIndex = t - 1;
                 boolean[][] ySWOValues = dataModel.getYSWOValuesForAgent(finalSWOIteration, e.getId() - 1);
                 double[][] sRTOValues = dataModel.getSRTOValuesForAgent(currentRTOIteration, e.getId() - 1);
-                double[][] uRTOValues = dataModel.getURTOValuesForAgent(currentRTOIteration, e.getId() - 1);
+    
                 double opMin = params.minOperation.get(e);
                 double opMax = params.maxOperation.get(e);
                 
@@ -174,7 +173,7 @@ public class RTO_XUpdateBehaviour extends OneShotBehaviour {
             }
         }
         
-        // Berechnung des dualen Energieterms: Hier summieren wir über die noch optimierten Perioden.
+        // Calculation of the dual energy term: Here we sum over the periods still being optimized.
         double[][] renewableEnergyMatrix = dataModel.getFluctuatingRenewableEnergyMatrix();
         double totalRenewableEnergy = 0;
         for (int t = currentStartPeriod; t <= rtoStepsPerSWOPeriod; t++) {
@@ -208,7 +207,7 @@ public class RTO_XUpdateBehaviour extends OneShotBehaviour {
         try {
             int status = model.get(GRB.IntAttr.Status);
             if (status == GRB.OPTIMAL) {
-                // Bei optimaler Lösung werden die Ergebnisse gespeichert.
+                // When optimal solution is found, results are saved.
                 saveResults(currentRTOIteration + 1);
                 // Optional: Ergebnisse in eine Excel-Datei schreiben
                 String optimizationResultsOutput = "RTO-Results_" + myAgent.getLocalName() + "_Run_"
@@ -230,7 +229,7 @@ public class RTO_XUpdateBehaviour extends OneShotBehaviour {
     
     private void saveResults(int nextIteration) throws GRBException {
         Set<Electrolyzer> filteredElectrolyzers = filterElectrolyzers(electrolyzers, filterCriteria);
-        // Speichern der x-Werte für alle Perioden (sowohl fixierte als auch optimierte)
+        // Save x-values for all periods (both fixed and optimized)
         for (Electrolyzer e : filteredElectrolyzers) {
             int agentID = e.getId() - 1;
             for (int t = 1; t <= rtoStepsPerSWOPeriod; t++) {

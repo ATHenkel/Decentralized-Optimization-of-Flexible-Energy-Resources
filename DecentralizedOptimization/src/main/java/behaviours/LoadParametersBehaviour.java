@@ -10,10 +10,10 @@ public class LoadParametersBehaviour extends OneShotBehaviour {
 
     private static final long serialVersionUID = 1L;
     private Workbook workbook;
-    private ADMMDataModel dataModel; // Verweis auf das ADMMDataModel des Agenten
-    private Parameters params;       // Geladene Parameter werden hier gespeichert
+    private ADMMDataModel dataModel; // Reference to the agent's ADMMDataModel
+    private Parameters params;       // Loaded parameters are stored here
 
-    // Konstruktor: Übergabe des Workbooks und des ADMMDataModel
+    // Constructor: Pass workbook and ADMMDataModel
     public LoadParametersBehaviour(Workbook workbook, ADMMDataModel dataModel) {
         this.workbook = workbook;
         this.dataModel = dataModel;
@@ -21,25 +21,25 @@ public class LoadParametersBehaviour extends OneShotBehaviour {
 
     @Override
     public void action() {
-        // Lade die Parameter aus dem Excel-Workbook
+        // Load parameters from Excel workbook
         params = loadParameters(workbook);
         
-        // Füge die geladenen Parameter ins ADMMDataModel ein
+        // Insert loaded parameters into ADMMDataModel
         dataModel.setParameters(params); 
         
-        // Optionale Ausgabe zur Überprüfung
-        System.out.println("Parameter erfolgreich geladen und in das ADMMDataModel eingefügt.");
+        // Optional output for verification
+        System.out.println("Parameters successfully loaded and inserted into ADMMDataModel.");
     }
 
     /**
-     * Methode zum Laden der Parameter aus der Excel-Datei
+     * Method for loading parameters from Excel file
      */
     private static Parameters loadParameters(Workbook workbook) {
-        Sheet agentsSheet = workbook.getSheet("Agent");
+        Sheet agentsSheet = workbook.getSheet("Agent_heterogen");
         Sheet periodsSheet = workbook.getSheet("Periods");
         Sheet parametersSheet = workbook.getSheet("GlobalParameters");
 
-        // Laden der Agenten-Parameter
+        // Loading agent parameters
         Map<Electrolyzer, Double> powerElectrolyzer = new HashMap<>();
         Map<Electrolyzer, Double> minOperation = new HashMap<>();
         Map<Electrolyzer, Double> maxOperation = new HashMap<>();
@@ -51,15 +51,15 @@ public class LoadParametersBehaviour extends OneShotBehaviour {
         Map<Electrolyzer, Double> rampRate = new HashMap<>();
         Set<Electrolyzer> electrolyzers = new HashSet<>();
 
-        // Mindestverweildauer für Zustände (Idle, Starting, Production, Standby)
+        // Minimum holding duration for states (Idle, Starting, Production, Standby)
         Map<Electrolyzer, Map<State, Integer>> holdingDurations = new HashMap<>();
 
-        // Lesen der Elektrolyseur-Daten aus der Agenten-Tabelle
+        // Reading electrolyzer data from agent table
         for (Row row : agentsSheet) {
             if (row.getRowNum() == 0)
                 continue;
 
-            // Erstellen eines neuen Electrolyzer-Objekts mit allen erforderlichen Parametern
+            // Creating a new Electrolyzer object with all required parameters
             Electrolyzer electrolyzer = new Electrolyzer(
                 (int) row.getCell(0).getNumericCellValue(),    // Column A: ID
                 row.getCell(1).getNumericCellValue(),          // Column B: powerElectrolyzer
@@ -72,7 +72,7 @@ public class LoadParametersBehaviour extends OneShotBehaviour {
                 row.getCell(5).getNumericCellValue()           // Column F: standbyCost
             );
 
-            // Speichern der Parameter in den jeweiligen Maps
+            // Saving parameters in respective maps
             powerElectrolyzer.put(electrolyzer, electrolyzer.getPowerElectrolyzer());
             minOperation.put(electrolyzer, electrolyzer.getMinOperation());
             maxOperation.put(electrolyzer, electrolyzer.getMaxOperation());
@@ -82,7 +82,7 @@ public class LoadParametersBehaviour extends OneShotBehaviour {
             startupCost.put(electrolyzer, electrolyzer.getStartupCost());
             standbyCost.put(electrolyzer, electrolyzer.getStandbyCost());
 
-            // Laden der Haltedauern (Idle, Starting, Production, Standby)
+            // Loading holding durations (Idle, Starting, Production, Standby)
             Map<State, Integer> electrolyzerHoldingDurations = new HashMap<>();
             electrolyzerHoldingDurations.put(State.IDLE, (int) row.getCell(8).getNumericCellValue());       // Column J
             electrolyzerHoldingDurations.put(State.STARTING, (int) row.getCell(9).getNumericCellValue());  // Column K
@@ -90,12 +90,12 @@ public class LoadParametersBehaviour extends OneShotBehaviour {
             electrolyzerHoldingDurations.put(State.STANDBY, (int) row.getCell(11).getNumericCellValue());   // Column M
             rampRate.put(electrolyzer, row.getCell(12).getNumericCellValue());           // Column M
 
-            // Haltedauern in die Map einfügen
+            // Insert holding durations into map
             holdingDurations.put(electrolyzer, electrolyzerHoldingDurations);
             electrolyzers.add(electrolyzer);
         }
 
-        // Laden der periodenspezifischen Parameter, einschließlich Demand
+        // Loading period-specific parameters, including demand
         Map<Period, Double> electricityPrice = new HashMap<>();
         Map<Period, Double> availablePower = new HashMap<>();
         Map<Period, Double> periodDemand = new HashMap<>();
@@ -103,7 +103,7 @@ public class LoadParametersBehaviour extends OneShotBehaviour {
         Map<Period, Double> totalElectroylzerPower = new HashMap<>();
         Set<Period> periods = new HashSet<>();
 
-        // Lesen der Perioden-Daten aus der Perioden-Tabelle
+        // Reading period data from periods table
         for (Row row : periodsSheet) {
             if (row.getRowNum() == 0)
                 continue;
@@ -114,11 +114,11 @@ public class LoadParametersBehaviour extends OneShotBehaviour {
             periods.add(period);                                        
         }
 
-        // Global Parameter
+        // Global Parameters
         double intervalLength = parametersSheet.getRow(1).getCell(1).getNumericCellValue();
         double demandDeviationCost = parametersSheet.getRow(2).getCell(1).getNumericCellValue();
 
-        // Rückgabe der Parameter einschließlich der Gesamtanzahl der Elektrolyseure
+        // Return parameters including total number of electrolyzers
         return new Parameters(
                 startupCost, 
                 standbyCost, 
@@ -134,7 +134,7 @@ public class LoadParametersBehaviour extends OneShotBehaviour {
                 startupDuration, 
                 demandDeviationCost, 
                 holdingDurations, 
-                rampRate,  // Füge rampRate als Parameter hinzu
+                rampRate, // Add rampRate as parameter
                 electrolyzers,  
                 periods,  
                 electrolyzers.size(), 

@@ -54,7 +54,7 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
 
     private void initializeVariablesAndConstraints() {
         // Filter the electrolyzers that should be considered
-        Set<Electrolyzer> filteredElectrolyzers = filterElectrolyzers(electrolyzers, filterCriteria);
+    
         try {
             yVars = new HashMap<>();
             residual1Vars = new HashMap<>();
@@ -161,7 +161,7 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
 
     @Override
     public void action() {
-    	System.out.println("y-SWO-Update von " + myAgent.getLocalName() + " in Iteration: " + iteration + " in Startperiode: " + currentStartPeriod);
+    	System.out.println("y-SWO-Update from " + myAgent.getLocalName() + " in Iteration: " + iteration);
     	
         long startTime = System.nanoTime();
         try {

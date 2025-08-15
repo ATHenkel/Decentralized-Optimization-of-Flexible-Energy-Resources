@@ -41,7 +41,7 @@ public class Parameters {
         Map<Electrolyzer, Integer> startupDuration, 
         double demandDeviationCost, 
         Map<Electrolyzer, Map<State, Integer>> holdingDurations, 
-        Map<Electrolyzer, Double> rampRate,  // Neue Rampenrate-Map
+        Map<Electrolyzer, Double> rampRate,  // New ramp rate map
         Set<Electrolyzer> electrolyzers,        
         Set<Period> periods,  
         int totalElectrolyzers, 
@@ -63,7 +63,7 @@ public class Parameters {
         this.startupDuration = startupDuration;
         this.demandDeviationCost = demandDeviationCost;
         this.holdingDurations = holdingDurations;
-        this.rampRate = rampRate; // Setzen der Rampenrate
+        this.rampRate = rampRate; // Set ramp rate
         this.electrolyzers = electrolyzers;    
         this.periods = periods;
         this.totalElectrolyzers = totalElectrolyzers; 
@@ -87,12 +87,12 @@ public class Parameters {
         return electrolyzers;
     }
 
-    // Getter für die Perioden
+    // Getter for periods
     public Set<Period> getPeriods() {
         return periods;
     }
     
-    // Getter für den Periodenbedarf
+    // Getter for period demand
     public Double getPeriodDemand(Period period) {
         return demand.get(period);
     }

@@ -40,7 +40,7 @@ public class SWO_SUpdateBehaviour extends OneShotBehaviour {
 
     @Override
     public void action() {
-    	System.out.println("s-Update von " + myAgent.getLocalName() + " in Iteration: " + iteration);
+    	System.out.println("s-Update from " + myAgent.getLocalName() + " in Iteration: " + iteration);
     	
     	long startTime = System.nanoTime();  // Start time measurement
         try {
@@ -139,7 +139,7 @@ public class SWO_SUpdateBehaviour extends OneShotBehaviour {
 
         } catch (GRBException e) {
             e.printStackTrace();
-            System.out.println("Fehler während des S-Updates.");
+            System.out.println("Error during S-Update.");
         }
         
         long sEndTime = System.nanoTime();

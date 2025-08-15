@@ -44,7 +44,7 @@ public class RTO_DualUpdateBehaviour extends OneShotBehaviour {
     @Override
     public void action() {
     	Set<Electrolyzer> filteredElectrolyzers = filterElectrolyzers(electrolyzers, filterCriteria);
-    	System.out.println("Duales Update von " + myAgent.getLocalName() + " in RTO-Iteration: " + currentRTOIteration + " SWO-Iteration: " + finalSWOIteration +  " in  Startperiode: " + currentStartPeriod);
+    	System.out.println("Dual update from " + myAgent.getLocalName() + " in RTO iteration: " + currentRTOIteration + " SWO iteration: " + finalSWOIteration +  " in  start period: " + currentStartPeriod);
     	
         optimizeUForElectrolyzer();
 
@@ -240,7 +240,7 @@ public class RTO_DualUpdateBehaviour extends OneShotBehaviour {
             myAgent.send(msg);
            
         } else {
-            System.out.println("Keine Empfänger gefunden, Nachricht wurde nicht gesendet.");
+            System.out.println("No recipients found, message not sent.");
         }
         
         dataModel.setDualUpdateCompleted(true);

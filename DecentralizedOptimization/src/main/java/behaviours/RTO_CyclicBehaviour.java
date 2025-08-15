@@ -65,7 +65,7 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
     public void action() {
         // Initialization for the first iteration
         if (!isFirstRTOXUpdateDone) {
-            System.out.println("Starte RTO-Optimierung für Agent: " + myAgent.getLocalName());
+            System.out.println("Start RTO optimization for agent: " + myAgent.getLocalName());
             
             // Create fluctuating renewable energies once:
             double renewableEnergySWO = parameters.getRenewableEnergy(new Period(currentSWOPeriod));
@@ -90,7 +90,7 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
             dataModel.setStartRTOComputationTime(startComputationTime);
             
             // Execute xUpdate
-            System.err.println("Initiales X-Update von Agent " + myAgent.getLocalName());
+            System.err.println("Initial X-Update from agent " + myAgent.getLocalName());
             executeRTO_XUpdate();
             isFirstRTOXUpdateDone = true;
             return;
@@ -116,7 +116,7 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
 
 
     /**
-     * Verarbeitet eine eingehende Nachricht basierend auf ihrem Typ.
+     * Processes an incoming message based on its type.
      */
 	private void processRTOMessage(ACLMessage msg) {
 		String content = msg.getContent();
@@ -139,7 +139,7 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
 	}
 
     /**
-     * Prüft, ob alle X-Update-Nachrichten empfangen wurden.
+     * Checks if all X-Update messages have been received.
      */
     private void checkRTO_XUpdateCompletion() {
         if (receivedXRTOMessages == totalNumberADMMAgents - 1) {
@@ -148,7 +148,7 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
     }
    
 	/**
-	 * Prüft, ob alle Dual-Update-Nachrichten empfangen wurden.
+	 * Checks if all Dual-Update messages have been received.
 	 */
 
 	private void checkRTO_DualUpdateCompletion() {
@@ -181,9 +181,9 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
 
 
 	/**
-	 * Wird aufgerufen, wenn die Konvergenz erreicht wurde.
-	 * Speichert die x-Werte, exportiert die Ergebnisse, setzt Zähler zurück
-	 * und erhöht currentStartPeriod.
+	 * Called when convergence is reached.
+	 * Saves the x-values, exports the results, resets the counter
+	 * and increases currentStartPeriod.
 	 */
 	private void handleConvergence(double energyBalance) {
 	    System.out.println("Energy Balance: " + energyBalance + " Agent: " + myAgent.getLocalName());
@@ -201,7 +201,7 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
 	        }
 	    }
 	    
-	    // Berechne die finale Rechenzeit
+	    // Calculate the final computation time
 	    long finalComputationTime = System.nanoTime() - dataModel.getStartRTOComputationTime();
 	    dataModel.setFinalRTOComputationTime(finalComputationTime);
 
@@ -215,7 +215,7 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
 	    String excelFilePathFinalResults = desktopPath + "/" + timestamp + "_CurrentStartPeriod_"
 	                                        + currentStartPeriod + "_RTO-Results_" + myAgent.getLocalName() + ".xlsx";
 	    
-	    // Exportiere die Ergebnisse
+	    // Export the results
 	    dataModel.exportXRTOResultsToExcel(excelFilePathFinalResults, rtoIterationCount, energyBalance, finalComputationTime);
 
 	            // Set the start time for the next iteration
@@ -229,33 +229,33 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
 	            // Start the next x-update phase if not all RTO steps have been processed yet.
 	    if (currentStartPeriod <= rtoStepsPerSWOPeriod) {
 	        if (receivedXRTOMessages == totalNumberADMMAgents - 1) {
-	        	System.err.println("Hier! Konvergenz-Fall");
+	        	System.err.println("Here! Convergence case");
 	        	
 	            executeRTO_XUpdate();
 	        }
 	    } else {
-	        // Falls alle Perioden bearbeitet wurden, sende eine Konvergenznachricht.
+	        // If all periods have been processed, send a convergence message.
 	        sendConvergenceMessage();
 	    }
 	}
 
     /**
-     * Führt die Y-, S- und Dual-Updates aus.
+     * Performs Y-, S- and Dual-Updates.
      */
 	private void executeRTO_SDualUpdates() {
 	    SequentialBehaviour seq = new SequentialBehaviour();
 
-	    // Erster Schritt: SUpdate
+	    // First step: SUpdate
 	    seq.addSubBehaviour(new RTO_SUpdateBehaviour(model, parameters, electrolyzers, new Period(7), finalSWOIteration, dataModel, rho, e -> electrolyzers.contains(e), rtoIterationCount));
 
-	    // Zweiter Schritt: DualUpdate
+	    // Second step: DualUpdate
 	    seq.addSubBehaviour(new RTO_DualUpdateBehaviour(parameters, electrolyzers, new Period(7), finalSWOIteration, dataModel, rho, e -> electrolyzers.contains(e), rtoIterationCount, currentStartPeriod));
 
 	    seq.addSubBehaviour(new WakerBehaviour(myAgent, 10) {
 			private static final long serialVersionUID = 1L;
 
 			protected void onWake() {
-	            System.out.println("5 ms nach Abschluss von SequentialBehaviour vergangen.");
+	            System.out.println("5 ms after completion of SequentialBehaviour elapsed.");
 	        }
 	    });
 
@@ -265,7 +265,7 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
 
 
     /**
-     * Führt das X-Update aus.
+     * Performs the X-Update.
      */
     private void executeRTO_XUpdate() {
     	dataModel.setDualUpdateCompleted(false);
@@ -277,7 +277,7 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
 			} 
     	}
     	
-    	// Entferne alle Variablen
+    	// Remove all variables
     	for (GRBVar var : model.getVars()) {
     	    try {
 				model.remove(var);
@@ -296,7 +296,7 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
     }
 
     /**
-     * Verarbeitet Konvergenznachrichten.
+     * Processes convergence messages.
      */
     private void handleRTO_ConvergenceMessage() {
         receivedConvergenceRTOMessages++;
@@ -306,7 +306,7 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
     }
     
     /**
-     * Verarbeitet Konvergenznachrichten.
+     * Processes convergence messages.
      */
     private void handleRTO_messagesIncrementedIteration() {
     	receivedIterationIncrementedMessages++;
@@ -321,14 +321,14 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
     // Method for parsing the X update message and saving the details
     private void handleRTO_XUpdateMessage(String content) {
         String[] parts = content.split(";");
-        StringBuilder output = new StringBuilder("Gebündelte X-Werte und Wasserstoffproduktion aus x-Update:\n");
+        StringBuilder output = new StringBuilder("Bundled X-values and hydrogen production from x-Update:\n");
 
         if (parts.length >= 2) {
             int iteration = Integer.parseInt(parts[1]);
             output.append("Iteration: ").append(iteration).append("\n");
             
             if (iteration != rtoIterationCount) {
-                System.err.println("Falsche Iteration RTO bei Agent " + myAgent.getLocalName() + " ist Iteration " + rtoIterationCount);
+                System.err.println("Incorrect RTO iteration at agent " + myAgent.getLocalName() + " is iteration " + rtoIterationCount);
             }
 
             for (int i = 2; i < parts.length; i++) {
@@ -341,9 +341,9 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
 
                     output.append("Agent: ").append(myAgent.getLocalName())
                           .append(", Electrolyzer ID: ").append(electrolyzerID)
-                          .append(", Periode: ").append(periodIndex)
-                          .append(", X-Wert: ").append(xValue)
-                          .append(", Wasserstoffproduktion: ").append(hydrogenProduction)
+                          .append(", Period: ").append(periodIndex)
+                          .append(", X-Value: ").append(xValue)
+                          .append(", Hydrogen Production: ").append(hydrogenProduction)
                           .append("\n");
 
                     // Save the values in the ADMM data model
@@ -365,7 +365,7 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
                     int electrolyzerID = Integer.parseInt(resultParts[0]) - 1;
                     int periodIndex = Integer.parseInt(resultParts[1]) - 1;
 
-                    // Speichere U-Werte
+                    // Save U-values
                     double u1 = Double.parseDouble(resultParts[2]);
                     double u2 = Double.parseDouble(resultParts[3]);
                     double u3 = Double.parseDouble(resultParts[4]);
@@ -373,13 +373,13 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
                     dataModel.saveURTOValueForAgentPeriod(iteration + 1, electrolyzerID, periodIndex, 1, u2);
                     dataModel.saveURTOValueForAgentPeriod(iteration + 1, electrolyzerID, periodIndex, 2, u3);
                     
-                    // Speichere S-Werte
+                    // Save S-values
                     double s1 = Double.parseDouble(resultParts[5]);
                     double s2 = Double.parseDouble(resultParts[7]);
                     dataModel.saveSRTOValueForPeriod(iteration + 1, electrolyzerID, periodIndex, 0, s1);
                     dataModel.saveSRTOValueForPeriod(iteration + 1, electrolyzerID, periodIndex, 1, s2);
 
-                    // Speichere Residuals
+                    // Save Residuals
                     double residual1 = Double.parseDouble(resultParts[7]);
                     double residual2 = Double.parseDouble(resultParts[8]);
                     double residual3 = Double.parseDouble(resultParts[9]);
@@ -405,12 +405,12 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
         myAgent.send(msg);
     }
     
-    private final Object lock = new Object();  // Synchronisationsobjekt
+    private final Object lock = new Object();  // Synchronisation object
 
     private void sendIncrementMessage() {
-        synchronized (lock) {  // Der Thread muss den Monitor des Objekts 'lock' besitzen
+        synchronized (lock) {  // The thread must own the monitor of the 'lock' object
             try {
-                // Deine Logik zum Versenden der Nachricht
+                // Your message sending logic
                 ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
                 msg.setContent("iterationIncremented");
                 for (AID agent : dataModel.getPhoneBook()) {
@@ -446,7 +446,7 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
             }
             
             if (desktopPath == null || desktopPath.isEmpty()) {
-                desktopPath = Paths.get(System.getProperty("user.home"), "Desktop").toString(); // Standardpfad
+                desktopPath = Paths.get(System.getProperty("user.home"), "Desktop").toString(); // Standard path
             }
 
             String excelFilePathIterationResults = desktopPath + "/" + saveDetails + "_RTO_Results_" + myAgent.getLocalName() + ".xlsx";
@@ -454,11 +454,11 @@ public class RTO_CyclicBehaviour extends CyclicBehaviour {
 
             dataModel.writeRTOValuesToExcel(dataModel, 10, excelFilePathIterationResults, finalSWOIteration, currentSWOPeriod);
             
-            System.out.println("Ergebnisse erfolgreich gespeichert:");
-            System.out.println("Iterationsdaten: " + excelFilePathIterationResults);
-            System.out.println("Finale Ergebnisse: " + excelFilePathFinalResults);
+            System.out.println("Results successfully saved:");
+            System.out.println("Iteration data: " + excelFilePathIterationResults);
+            System.out.println("Final results: " + excelFilePathFinalResults);
         } catch (Exception e) {
-            System.err.println("Fehler beim Schreiben der Excel-Dateien: " + e.getMessage());
+            System.err.println("Error writing Excel files: " + e.getMessage());
             e.printStackTrace();
         }
 

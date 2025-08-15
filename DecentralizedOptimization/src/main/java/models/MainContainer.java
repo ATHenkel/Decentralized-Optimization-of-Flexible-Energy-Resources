@@ -20,10 +20,10 @@ import java.util.*;
 public class MainContainer {
 
     public static void main(String[] args) {
-        // Schritt 1: Erstelle die JADE-Instanz
+        // Step 1: Create the JADE instance
         Runtime rt = Runtime.instance();
 
-        // Schritt 2: Erstelle ein Standard-Profil für den Main-Container
+        // Step 2: Create a standard profile for the main container
         Profile mainProfile = new ProfileImpl();
         mainProfile.setParameter(Profile.MAIN_HOST, "localhost");
         mainProfile.setParameter(Profile.GUI, "false");
@@ -31,43 +31,43 @@ public class MainContainer {
         AgentContainer mainContainer = rt.createMainContainer(mainProfile);
 
         try {
-            // Lade das Excel-Workbook
+            // Load the Excel workbook
             FileInputStream excelFile = new FileInputStream("in/InputData.xlsx");
             Workbook workbook = new XSSFWorkbook(excelFile);
 
-            // Setze Parameter
+            // Set parameters
             int totalNumberADMMAgents = 4; 
             double rho = 1.37728;
             int maxIterations = 20;
             
-            // Starte den AMSAgent
+            // Start the AMSAgent
             Object[] amsAgentArgs = new Object[]{totalNumberADMMAgents};
             AgentController amsAgent = mainContainer.createNewAgent("AMSAgent", AMSAgent.class.getName(), amsAgentArgs);
             amsAgent.start();
 
-            // Dynamische AID des AMSAgent
+            // Dynamic AID of the AMSAgent
             AID amsAgentAID = new AID("AMSAgent", AID.ISLOCALNAME);
 
-            // Elektrolyseur-IDs aufteilen
+            // Distribute electrolyzer IDs
             Map<Integer, Set<Integer>> agentElectrolyzerMap = distributeElectrolyzers(totalNumberADMMAgents, 120);
 
-            // Perioden-Sets für Agenten festlegen
+            // Set periods for agents
             Map<Integer, String> periodSets = distributePeriods(totalNumberADMMAgents, 96);
 
-            // Agenten starten
+            // Start agents
             for (int i = 1; i <= totalNumberADMMAgents; i++) {
                 String agentName = "ADMM" + (i + 2); // ADMM3, ADMM4, ...
                 Set<Integer> electrolyzerIds = agentElectrolyzerMap.get(i);
                 String periods = periodSets.get(i);
 
-                // System-Property setzen
+                // Set system property
                 System.setProperty(agentName + "_PERIODS", periods);
                 System.out.println(agentName + "_PERIODS: " + System.getProperty(agentName + "_PERIODS"));
 
-                // Agent-Argumente erstellen
+                // Create agent arguments
                 Object[] agentArgs = new Object[]{workbook, electrolyzerIds, totalNumberADMMAgents, rho, maxIterations, amsAgentAID};
 
-                // Agenten starten
+                // Start agents
                 AgentController agentController = mainContainer.createNewAgent(agentName, ADMMAgent.class.getName(), agentArgs);
                 agentController.start();
             }
@@ -78,7 +78,7 @@ public class MainContainer {
     }
 
     /**
-     * Verteilt die Elektrolyseur-IDs gleichmäßig auf die Agenten.
+     * Distributes electrolyzer IDs evenly among agents.
      */
     private static Map<Integer, Set<Integer>> distributeElectrolyzers(int numberOfAgents, int totalElectrolyzers) {
         Map<Integer, Set<Integer>> agentMap = new HashMap<>();
@@ -101,7 +101,7 @@ public class MainContainer {
     }
 
     /**
-     * Verteilt die Perioden-Sets gleichmäßig auf die Agenten.
+     * Distributes period sets evenly among agents.
      */
     private static Map<Integer, String> distributePeriods(int numberOfAgents, int totalPeriods) {
         Map<Integer, String> periodMap = new HashMap<>();

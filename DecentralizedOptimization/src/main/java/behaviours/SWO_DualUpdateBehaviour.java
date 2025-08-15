@@ -41,7 +41,7 @@ public class SWO_DualUpdateBehaviour extends OneShotBehaviour {
 
     @Override
     public void action() {
-    	System.out.println("Duales Update von " + myAgent.getLocalName() + " in Iteration: " + iteration);
+    	System.out.println("Dual update from " + myAgent.getLocalName() + " in iteration: " + iteration);
     	
     	startTime = System.nanoTime();  // Start time measurement
     	
@@ -196,7 +196,7 @@ public class SWO_DualUpdateBehaviour extends OneShotBehaviour {
         if (msg.getAllReceiver().hasNext()) {
             myAgent.send(msg);
         } else {
-            System.out.println("Keine Empfänger gefunden, Nachricht wurde nicht gesendet.");
+            System.out.println("No recipients found, message not sent.");
         }
 
         // Gesendete Nachrichten speichern

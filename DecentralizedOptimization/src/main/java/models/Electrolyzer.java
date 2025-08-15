@@ -2,16 +2,16 @@ package models;
 
 public class Electrolyzer {
     private int id;
-    private double powerElectrolyzer; // Maximale Leistung des Elektrolyseurs
-    private double minOperation; // Minimale Betriebsleistung
-    private double maxOperation; // Maximale Betriebsleistung
-    private double slope; // Steigung der Produktionsfunktion
-    private double intercept; // Achsenabschnitt der Produktionsfunktion
-    private int startupDuration; // Startdauer des Elektrolyseurs
-    private double startupCost; // Anlaufkosten
-    private double standbyCost; // Kosten im Standby-Modus
+    private double powerElectrolyzer; // Maximum power of the electrolyzer
+    private double minOperation; // Minimum operating power
+    private double maxOperation; // Maximum operating power
+    private double slope; // Slope of the production function
+    private double intercept; // Intercept of the production function
+    private int startupDuration; // Startup duration of the electrolyzer
+    private double startupCost; // Startup costs
+    private double standbyCost; // Costs in standby mode
 
-    // Konstruktor
+    // Constructor
     public Electrolyzer(int id, double powerElectrolyzer, double minOperation, double maxOperation, double slope,
                         double intercept, int startupDuration, double startupCost, double standbyCost) {
         this.id = id;
@@ -25,7 +25,7 @@ public class Electrolyzer {
         this.standbyCost = standbyCost;
     }
 
-    // Getter-Methoden für die Parameter
+    // Getter methods for the parameters
     public int getId() {
         return id;
     }
@@ -62,7 +62,7 @@ public class Electrolyzer {
         return standbyCost;
     }
 
-    // Optional: Setter-Methoden, falls du die Parameter zur Laufzeit ändern möchtest
+    // Optional: Setter methods, if you want to change the parameters at runtime
     public void setPowerElectrolyzer(double powerElectrolyzer) {
         this.powerElectrolyzer = powerElectrolyzer;
     }

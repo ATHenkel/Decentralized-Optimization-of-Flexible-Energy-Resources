@@ -161,14 +161,14 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
     // Method for parsing the X update message and saving the details
     private void handleSWO_XUpdateMessage(String content) {
         String[] parts = content.split(";");
-        StringBuilder output = new StringBuilder("Gebündelte X-Werte und Wasserstoffproduktion aus x-Update:\n");
+        StringBuilder output = new StringBuilder("Bundled X-values and hydrogen production from x-Update:\n");
 
         if (parts.length >= 2) {
             int iteration = Integer.parseInt(parts[1]);
             output.append("Iteration: ").append(iteration).append("\n");
             
             if (iteration != swoIterationCount) {
-                System.err.println("Falsche Iteration SWO!!");
+                System.err.println("Incorrect SWO iteration!!");
             }
 
             for (int i = 2; i < parts.length; i++) {
@@ -181,9 +181,9 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 
                     output.append("Agent: ").append(myAgent.getLocalName())
                           .append(", Electrolyzer ID: ").append(electrolyzerID + 1)
-                          .append(", Periode: ").append(periodIndex + 1)
-                          .append(", X-Wert: ").append(xValue)
-                          .append(", Wasserstoffproduktion: ").append(hydrogenProduction)
+                          .append(", Period: ").append(periodIndex + 1)
+                          .append(", X-value: ").append(xValue)
+                          .append(", Hydrogen production: ").append(hydrogenProduction)
                           .append("\n");
 
                     // Save the values in the ADMM data model
@@ -301,18 +301,20 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
             dataModel.exportFinalIterationResultsToExcel(swoIterationCount, parameters.getElectrolyzers(), parameters.getPeriods(), parameters, excelFilePathFinalResults);
             
             // Export all variables per electrolyzer to separate Excel files
-            try {
-                String baseFilePath = desktopPath + "/" + saveDetails + "_ADMM_Variables_Iteration_" + swoIterationCount;
-                dataModel.exportAllVariablesPerElectrolyzerToExcel(
-                    swoIterationCount, 
-                    parameters.getElectrolyzers(), 
-                    parameters.getPeriods(), 
-                    baseFilePath
-                );
-                System.out.println("Alle Variablen erfolgreich in separate Excel-Dateien exportiert.");
-            } catch (Exception e) {
-                System.err.println("Fehler beim Exportieren der Variablen: " + e.getMessage());
-                e.printStackTrace();
+            if (myAgent.getLocalName().equals("ADMM3")) {
+                try {
+                    String baseFilePath = desktopPath + "/" + saveDetails + "_ADMM_Variables_Iteration_" + swoIterationCount;
+                    dataModel.exportAllVariablesPerElectrolyzerToExcel(
+                        swoIterationCount, 
+                        parameters.getElectrolyzers(), 
+                        parameters.getPeriods(), 
+                        baseFilePath
+                    );
+                    System.out.println("All variables successfully exported to separate Excel files.");
+                } catch (Exception e) {
+                    System.err.println("Error exporting variables: " + e.getMessage());
+                    e.printStackTrace();
+                }
             }
 
             /* 
@@ -332,7 +334,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
                 swoIterationCount // corresponds to final iteration
             ));*/
             
-            System.out.println("Entferne SWO-Cyclic Behaviour für Agent: " + myAgent.getLocalName());
+            System.out.println("Remove SWO-Cyclic Behaviour for Agent: " + myAgent.getLocalName());
             myAgent.removeBehaviour(this);
 
             
@@ -343,7 +345,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 //            System.out.println("Iteration data: " + excelFilePathIterationResults);
 //            System.out.println("Final results: " + excelFilePathFinalResults);
         } catch (Exception e) {
-            System.err.println("Fehler beim Schreiben der Excel-Dateien: " + e.getMessage());
+            System.err.println("Error writing Excel files: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -400,7 +402,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
     public static boolean checkFeasibilityAndCalculateObjective(Set<Period> currentPeriods,
             Parameters params, ADMMDataModel dataExchange, int admmIter) {
 
-	    System.out.println("Überprüfe Zulässigkeit nach Iteration " + admmIter);
+	    System.out.println("Check feasibility after iteration " + admmIter);
 
 	            double tolerancePercentage = 0.0005; // 0.5% tolerance allowed
         double zeroTolerance = 0.01; // Fixed tolerance when boundary value is zero
@@ -446,7 +448,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	            double lowerBound = 0.0;
 	            double lowerTolerance = (lowerBound == 0.0) ? zeroTolerance : tolerancePercentage * Math.abs(lowerBound);
 	            if (x < lowerBound - lowerTolerance) {
-	                System.out.println("Nebenbedingungsverletzung: x (" + x + ") < 0 (mit Toleranz " + lowerTolerance + ") für Elektrolyseur " + electrolyzer.getId() + " in Periode " + period.getT());
+	                System.out.println("Constraint violation: x (" + x + ") < 0 (with tolerance " + lowerTolerance + ") for Electrolyzer " + electrolyzer.getId() + " in Period " + period.getT());
 	                feasible = false;
 	            }
 
@@ -459,7 +461,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	            double upperTolerance = (xUpperBound == 0.0) ? zeroTolerance : tolerancePercentage * Math.abs(xUpperBound);
 
 	            if (x > xUpperBound + upperTolerance) {
-	                System.out.println("Nebenbedingungsverletzung: x (" + x + ") überschreitet obere Grenze (" + xUpperBound + ") plus Toleranz (" + upperTolerance + ") für Elektrolyseur " + electrolyzer.getId() + " in Periode " + period.getT());
+	                System.out.println("Constraint violation: x (" + x + ") exceeds upper bound (" + xUpperBound + ") plus tolerance (" + upperTolerance + ") for Electrolyzer " + electrolyzer.getId() + " in Period " + period.getT());
 	                feasible = false;
 	            }
 
@@ -481,10 +483,10 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	            double lowerToleranceBound = (xLowerBound == 0.0) ? zeroTolerance : tolerancePercentage * Math.abs(xLowerBound);
 
 	            if (x < xLowerBound - lowerToleranceBound) {
-	                System.out.println("Nebenbedingungsverletzung: x (" + x + ") unterschreitet untere Grenze (" 
-	                    + xLowerBound + ") minus Toleranz (" + lowerToleranceBound 
-	                    + ") für Elektrolyseur " + electrolyzer.getId() + " in Periode " + period.getT() 
-	                    + " (Zustand: " + activeState + ")");
+	                System.out.println("Constraint violation: x (" + x + ") exceeds lower bound (" 
+	                    + xLowerBound + ") minus tolerance (" + lowerToleranceBound 
+	                    + ") for Electrolyzer " + electrolyzer.getId() + " in Period " + period.getT() 
+	                    + " (State: " + activeState + ")");
 	                feasible = false;
 	            }
 	            // State transition conditions
@@ -498,7 +500,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	                boolean lhs_STARTING = y[State.STARTING.ordinal()];
 	                boolean rhs_STARTING = yPrev[State.IDLE.ordinal()] || yPrev[State.STARTING.ordinal()];
 	                if (lhs_STARTING && !rhs_STARTING) {
-	                    System.out.println("Nebenbedingungsverletzung: Ungültiger Übergang zu STARTING für Elektrolyseur " + electrolyzer.getId() + " in Periode " + period.getT());
+	                    System.out.println("Constraint violation: Invalid transition to STARTING for Electrolyzer " + electrolyzer.getId() + " in Period " + period.getT());
 	                    feasible = false;
 	                }
 
@@ -513,7 +515,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	                    rhs_PRODUCTION = rhs_PRODUCTION || yStartPrev;
 	                }
 	                if (lhs_PRODUCTION && !rhs_PRODUCTION) {
-	                    System.out.println("Nebenbedingungsverletzung: Ungültiger Übergang zu PRODUCTION für Elektrolyseur " + electrolyzer.getId() + " in Periode " + period.getT());
+	                    System.out.println("Constraint violation: Invalid transition to PRODUCTION for Electrolyzer " + electrolyzer.getId() + " in Period " + period.getT());
 	                    feasible = false;
 	                }
 
@@ -521,7 +523,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	                boolean lhs_STANDBY = y[State.STANDBY.ordinal()];
 	                boolean rhs_STANDBY = yPrev[State.PRODUCTION.ordinal()] || yPrev[State.STANDBY.ordinal()];
 	                if (lhs_STANDBY && !rhs_STANDBY) {
-	                    System.out.println("Nebenbedingungsverletzung: Ungültiger Übergang zu STANDBY für Elektrolyseur " + electrolyzer.getId() + " in Periode " + period.getT());
+	                    System.out.println("Constraint violation: Invalid transition to STANDBY for Electrolyzer " + electrolyzer.getId() + " in Period " + period.getT());
 	                    feasible = false;
 	                }
 
@@ -529,7 +531,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	                boolean lhs_IDLE = y[State.IDLE.ordinal()];
 	                boolean rhs_IDLE = yPrev[State.IDLE.ordinal()] || yPrev[State.PRODUCTION.ordinal()] || yPrev[State.STANDBY.ordinal()];
 	                if (lhs_IDLE && !rhs_IDLE) {
-	                    System.out.println("Nebenbedingungsverletzung: Ungültiger Übergang zu IDLE für Elektrolyseur " + electrolyzer.getId() + " in Periode " + period.getT());
+	                    System.out.println("Constraint violation: Invalid transition to IDLE for Electrolyzer " + electrolyzer.getId() + " in Period " + period.getT());
 	                    feasible = false;
 	                }
 	                
@@ -550,10 +552,10 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 
 					                            // Check for ramp rate violation
 					    if (diff1 > rampUpConstraint1 + upperRampTolerance) {
-					        System.out.println("Rampenratenverletzung (Bedingung 1): x_{a," + period.getT() + "} (" + currentXValue
-					                + ") - x_{a," + (period.getT() - 1) + "} (" + previousXValue + ") überschreitet RampRateMax ("
-					                + rampUpConstraint1 + ") plus Toleranz (" + upperRampTolerance + ") für Elektrolyseur "
-					                + electrolyzer.getId() + " in Periode " + period.getT());
+					        System.out.println("Ramp rate violation (Condition 1): x_{a," + period.getT() + "} (" + currentXValue
+					                + ") - x_{a," + (period.getT() - 1) + "} (" + previousXValue + ") exceeds RampRateMax ("
+					                + rampUpConstraint1 + ") plus tolerance (" + upperRampTolerance + ") for Electrolyzer "
+					                + electrolyzer.getId() + " in Period " + period.getT());
 					        feasible = false;
 					    }
 					}
@@ -591,15 +593,15 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	    }
 
 	    // Output and return of the feasibility
-	    System.out.println("Zielfunktionswert: " + objectiveValue);
+	    System.out.println("Objective function value: " + objectiveValue);
 	    
 	    // Save the objective function value in dataExchange
 	    dataExchange.saveObjectiveValueForIteration(admmIter, objectiveValue);
 	    
 	    if (feasible) {
-	        System.out.println("Lösung ist zulässig nach Iteration " + admmIter);
+	        System.out.println("Solution is feasible after iteration " + admmIter);
 	    } else {
-	        System.out.println("Lösung ist unzulässig nach Iteration " + admmIter);
+	        System.out.println("Solution is infeasible after iteration " + admmIter);
 	    }
 	    dataExchange.saveFeasibilityForIteration(admmIter, feasible);
 	    return feasible;

@@ -182,7 +182,7 @@ public class SWO_XUpdateBehaviour extends OneShotBehaviour {
      * Performs the main X-optimization for the SWO update
      */
     private void optimizeX() throws GRBException {
-        System.out.println("x-SWO-Update von " + myAgent.getLocalName() + " in Iteration: " + iteration + " in Startperiode: " + currentStartPeriod);
+        System.out.println("x-SWO-Update from " + myAgent.getLocalName() + " in Iteration: " + iteration);
 
         int nextIteration = iteration + 1;
         

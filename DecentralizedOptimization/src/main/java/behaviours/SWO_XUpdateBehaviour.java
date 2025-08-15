@@ -24,7 +24,7 @@ public class SWO_XUpdateBehaviour extends OneShotBehaviour {
     // CONSTANTS
     // ============================================================================
     private static final long serialVersionUID = 1L;
-    private static final double SCALING_FACTOR = 99.0;
+    private static final double SCALING_FACTOR = 999.0;
     private static final double SMALL_VALUE_THRESHOLD = 1e-6;
     private static final double OPTIMALITY_TOLERANCE = 1e-6;
 

@@ -26,9 +26,10 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
     private static final double SCALING_FACTOR = 999;
     private static final double SMALL_VALUE_THRESHOLD = 1e-6;
     private static final double OPTIMALITY_TOLERANCE = 1e-3;
-    private static final double RESIDUAL1_PENALTY_MULTIPLIER = 100.0; //min operation
+    private static final double RESIDUAL1_PENALTY_MULTIPLIER = 99999.0; //min operation
     private static final double RESIDUAL2_PENALTY_MULTIPLIER = 1.0; //max operation
     private static final double RESIDUAL3_PENALTY_MULTIPLIER = 1.0; //y-sum constraint
+    private static final double STARTING_STATE_PENALTY_MULTIPLIER = 1.0; //penalty for starting state
 
     // ============================================================================
     // INSTANCE VARIABLES
@@ -42,8 +43,7 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
     private final int iteration;
     private final ADMMDataModel dataModel;
     private final double rho; // Weighting factor for penalty terms
-    private final Predicate<Electrolyzer> filterCriteria;
-    private final int currentStartPeriod;
+
     
     // Performance tracking
     private long yUpdateTime = 0;
@@ -68,8 +68,6 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
         this.iteration = iteration;
         this.dataModel = dataModel;
         this.rho = rho;
-        this.filterCriteria = filterCriteria;
-        this.currentStartPeriod = currentStartPeriod;
 
         initializeVariablesAndConstraints();
     }
@@ -127,6 +125,14 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
             int electrolyzerID = e.getId() - 1;
 
             for (Period t : periods) {
+                // Initial state constraint: All electrolyzers start in IDLE state in period 1  
+                if (t.getT() == 1) {
+                    model.addConstr(yVars.get(e).get(t).get(State.IDLE), GRB.EQUAL, 1, "initial_state_IDLE_" + electrolyzerID);
+                    model.addConstr(yVars.get(e).get(t).get(State.STARTING), GRB.EQUAL, 0, "initial_state_STARTING_" + electrolyzerID);
+                    model.addConstr(yVars.get(e).get(t).get(State.PRODUCTION), GRB.EQUAL, 0, "initial_state_PRODUCTION_" + electrolyzerID);
+                    model.addConstr(yVars.get(e).get(t).get(State.STANDBY), GRB.EQUAL, 0, "initial_state_STANDBY_" + electrolyzerID);
+                }
+
                 if (t.getT() > 1) {
                     Period prevPeriod = new Period(t.getT() - 1);
 
@@ -254,6 +260,10 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
 
                 model.addConstr(residual3Vars.get(e).get(t), GRB.EQUAL, yResidual, "yResidual_constr_" + electrolyzerID + "_" + t.getT());
                 objectiveWithPenalty.addTerm(rho * RESIDUAL3_PENALTY_MULTIPLIER, residual3Vars.get(e).get(t), residual3Vars.get(e).get(t));
+                
+                // Penalty for STARTING state to avoid unnecessary starting
+                GRBVar startingStateVar = yVars.get(e).get(t).get(State.STARTING);
+                objectiveWithPenalty.addTerm(rho * STARTING_STATE_PENALTY_MULTIPLIER, startingStateVar);
             }
         }
 

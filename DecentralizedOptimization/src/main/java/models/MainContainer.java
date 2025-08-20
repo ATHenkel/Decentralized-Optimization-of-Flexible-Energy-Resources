@@ -38,7 +38,7 @@ public class MainContainer {
             // Set parameters
             int totalNumberADMMAgents = 5; 
             double rho = 1.5;
-            int maxIterations = 10;
+            int maxIterations = 8;
             
             // Start the AMSAgent
             Object[] amsAgentArgs = new Object[]{totalNumberADMMAgents};

@@ -36,7 +36,7 @@ public class MainContainer {
             Workbook workbook = new XSSFWorkbook(excelFile);
 
             // Set parameters
-            int totalNumberADMMAgents = 5; 
+            int totalNumberADMMAgents = 2; 
             double rho = 1.5;
             int maxIterations = 8;
             

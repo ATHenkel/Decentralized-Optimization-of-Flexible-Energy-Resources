@@ -23,10 +23,8 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
     // CONSTANTS
     // ============================================================================
     private static final long serialVersionUID = 1L;
-    private static final double SCALING_FACTOR = 999;
-    private static final double SMALL_VALUE_THRESHOLD = 1e-6;
     private static final double OPTIMALITY_TOLERANCE = 1e-3;
-    private static final double RESIDUAL1_PENALTY_MULTIPLIER = 99999.0; //min operation
+    private static final double RESIDUAL1_PENALTY_MULTIPLIER = 100000; // Statt 5000 //min operation, 99999.0 is a large number
     private static final double RESIDUAL2_PENALTY_MULTIPLIER = 1.0; //max operation
     private static final double RESIDUAL3_PENALTY_MULTIPLIER = 1.0; //y-sum constraint
     private static final double STARTING_STATE_PENALTY_MULTIPLIER = 1.0; //penalty for starting state
@@ -43,6 +41,8 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
     private final int iteration;
     private final ADMMDataModel dataModel;
     private final double rho; // Weighting factor for penalty terms
+    private final Predicate<Electrolyzer> filterCriteria;
+    private final int currentStartPeriod;
 
     
     // Performance tracking
@@ -68,6 +68,8 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
         this.iteration = iteration;
         this.dataModel = dataModel;
         this.rho = rho;
+        this.filterCriteria = filterCriteria;
+        this.currentStartPeriod = currentStartPeriod;
 
         initializeVariablesAndConstraints();
     }
@@ -222,11 +224,13 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
         int nextIteration = iteration + 1;
         GRBQuadExpr objectiveWithPenalty = new GRBQuadExpr();
         
+        Map<Electrolyzer, double[]> xValuesMap = new HashMap<>();
         for (Electrolyzer e : electrolyzers) {
-            int electrolyzerID = e.getId() - 1;
+            int electrolyzerID = e.getId()-1;
             double[][] sValues = dataModel.getSSWOValuesForAgent(iteration, electrolyzerID);
             double[][] uValues = dataModel.getUSWOValuesForAgent(iteration, electrolyzerID);
             double[] xValues = dataModel.getXSWOValuesForAgent(nextIteration, electrolyzerID);
+            xValuesMap.put(e, xValues);
 
             for (Period t : periods) {
                 int periodIndex = t.getT() - 1;
@@ -235,8 +239,8 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
                 GRBLinExpr residual1 = new GRBLinExpr();
                 residual1.addConstant(-xValues[periodIndex]);
                 residual1.addTerm(params.minOperation.get(e), yVars.get(e).get(t).get(State.PRODUCTION));
-                residual1.addConstant(sValues[periodIndex][0] + uValues[periodIndex][0]);
-
+                //residual1.addConstant(sValues[periodIndex][0] + uValues[periodIndex][0]);
+                
                 model.addConstr(residual1Vars.get(e).get(t), GRB.EQUAL, residual1, "residual1_constr_" + electrolyzerID + "_" + t.getT());
                 objectiveWithPenalty.addTerm(rho * RESIDUAL1_PENALTY_MULTIPLIER, residual1Vars.get(e).get(t), residual1Vars.get(e).get(t));
                 
@@ -244,8 +248,8 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
                 GRBLinExpr residual2 = new GRBLinExpr();
                 residual2.addConstant(xValues[periodIndex]);
                 residual2.addTerm(-params.maxOperation.get(e), yVars.get(e).get(t).get(State.PRODUCTION));
-                residual2.addConstant(sValues[periodIndex][1] + uValues[periodIndex][1]);
-
+                //residual2.addConstant(sValues[periodIndex][1] + uValues[periodIndex][1]);
+                
                 model.addConstr(residual2Vars.get(e).get(t), GRB.EQUAL, residual2, "residual2_constr_" + electrolyzerID + "_" + t.getT());
                 objectiveWithPenalty.addTerm(rho * RESIDUAL2_PENALTY_MULTIPLIER, residual2Vars.get(e).get(t), residual2Vars.get(e).get(t));
 
@@ -279,6 +283,30 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
             // Speichern des aktuellen Y-Objective-Werts
             double yObjectiveValue = model.get(GRB.DoubleAttr.ObjVal);
             dataModel.saveYObjective(iteration, yObjectiveValue);
+
+            // Check for x < opMin but PRODUCTION state active (excluding iteration 1)
+            if (iteration > 0) {
+                for (Electrolyzer e : electrolyzers) {
+                    
+                    double opMin = params.minOperation.get(e);
+                    
+                    for (Period t : periods) {
+                        int periodIndex = t.getT() - 1;
+                        double xValue = xValuesMap.get(e)[periodIndex];
+                        double yProductionValue = yVars.get(e).get(t).get(State.PRODUCTION).get(GRB.DoubleAttr.X);
+                        
+                        // Check if x < opMin but PRODUCTION state is active
+                        if (xValue > opMin && yProductionValue == 0.0 || xValue < opMin && yProductionValue > 0.5) {
+                            System.err.println("WARNING: x < opMin but PRODUCTION active - " +
+                                "Electrolyzer: " + e.getId() + 
+                                ", Period: " + t.getT() + 
+                                ", x-value: " + xValue + 
+                                ", opMin: " + opMin + 
+                                ", y_PRODUCTION: " + yProductionValue);
+                        }
+                    }
+                }
+            }
 
             // Speicherung der Residual-Werte
             for (Electrolyzer e : electrolyzers) {

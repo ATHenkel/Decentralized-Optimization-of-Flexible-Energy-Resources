@@ -187,7 +187,7 @@ public class ADMMAgent extends Agent {
         public void action() {
             ACLMessage msg = receive();
             if (msg != null && msg.getContent().startsWith("phoneBook:")) {
-                System.out.println("Initialisiere Telefonbuch für Agent: " + myAgent.getLocalName());
+                //System.out.println("Initialisiere Telefonbuch für Agent: " + myAgent.getLocalName());
                 String[] agentsInfo = msg.getContent().substring("phoneBook:".length()).split(";");
 
                 // Füge die AIDs und Adressen in das Telefonbuch des ADMMAgenten ein
@@ -198,8 +198,8 @@ public class ADMMAgent extends Agent {
                         String agentName = parts[0].trim();
                         String address = parts[1].trim();
 
-                        System.out.println("AgentName im Telefonbuch: " + agentName);
-                        System.out.println("Adresse im Telefonbuch: " + address);
+                        //System.out.println("AgentName im Telefonbuch: " + agentName);
+                        //System.out.println("Adresse im Telefonbuch: " + address);
 
                         // Extrahiere Host und Port aus der Adresse
                         String host = address.replaceAll("http://|/acc", "").split(":")[0];

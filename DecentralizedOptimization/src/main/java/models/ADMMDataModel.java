@@ -1433,6 +1433,36 @@ public class ADMMDataModel {
         boolean[][][] yValues = this.getYSWOValuesForIteration(finalIteration);
         double[][] hydrogenProductionValues = this.getHydrogenProductionForIteration(finalIteration);
 
+        // Check if data exists for the final iteration, if not use the last available iteration
+        if (xValues == null || yValues == null || hydrogenProductionValues == null) {
+            System.out.println("Warning: Data for final iteration " + finalIteration + " not found. Searching for last available iteration...");
+            
+            // Find the last iteration with available data
+            int lastAvailableIteration = finalIteration;
+            for (int i = finalIteration - 1; i >= 0; i--) {
+                if (this.getXSWOValuesForIteration(i) != null && 
+                    this.getYSWOValuesForIteration(i) != null && 
+                    this.getHydrogenProductionForIteration(i) != null) {
+                    lastAvailableIteration = i;
+                    System.out.println("Using data from iteration " + lastAvailableIteration + " instead.");
+                    break;
+                }
+            }
+            
+            // Get data from the last available iteration
+            xValues = this.getXSWOValuesForIteration(lastAvailableIteration);
+            yValues = this.getYSWOValuesForIteration(lastAvailableIteration);
+            hydrogenProductionValues = this.getHydrogenProductionForIteration(lastAvailableIteration);
+            
+            // If still no data available, create empty arrays to prevent crash
+            if (xValues == null || yValues == null || hydrogenProductionValues == null) {
+                System.out.println("Error: No data available for any iteration. Creating empty results file.");
+                xValues = new double[electrolyzers.size()][periods.size()];
+                yValues = new boolean[electrolyzers.size()][periods.size()][4]; // 4 states
+                hydrogenProductionValues = new double[electrolyzers.size()][periods.size()];
+            }
+        }
+
         // Fill result sheet with data for the final iteration
         for (Period period : periods) {
             int periodIndex = period.getT() - 1;
@@ -1443,16 +1473,25 @@ public class ADMMDataModel {
 
             for (Electrolyzer electrolyzer : electrolyzers) {
                 int electrolyzerIndex = electrolyzer.getId() - 1;
+                
+                // Check array bounds to prevent IndexOutOfBoundsException
+                if (electrolyzerIndex >= xValues.length || periodIndex >= xValues[0].length) {
+                    System.out.println("Warning: Array index out of bounds for electrolyzer " + electrolyzer.getId() + " period " + period.getT());
+                    continue;
+                }
+                
                 Row row = resultSheet.createRow(rowIndex++);
                 row.createCell(0).setCellValue(period.getT());
                 row.createCell(1).setCellValue(electrolyzer.getId());
                 row.createCell(2).setCellValue(xValues[electrolyzerIndex][periodIndex]);
 
                 String activeState = "None";
-                for (State state : State.values()) {
-                    if (yValues[electrolyzerIndex][periodIndex][state.ordinal()]) {
-                        activeState = state.name();
-                        break;
+                if (yValues != null && electrolyzerIndex < yValues.length && periodIndex < yValues[0].length) {
+                    for (State state : State.values()) {
+                        if (yValues[electrolyzerIndex][periodIndex][state.ordinal()]) {
+                            activeState = state.name();
+                            break;
+                        }
                     }
                 }
                 row.createCell(3).setCellValue(activeState);
@@ -2404,6 +2443,88 @@ e.printStackTrace();
         }
     }
 
-
+    /**
+     * Exportiert alle Parameter der Elektrolyseure in ein separates Excel-Sheet
+     * @param baseFilePath Basis-Dateipfad für den Export
+     * @param parameters Parameter-Objekt mit allen Elektrolyseur-Daten
+     * @throws IOException Bei Fehlern beim Schreiben der Datei
+     */
+    public void exportElectrolyzerParametersToExcel(String baseFilePath, Parameters parameters) throws IOException {
+        String filePath = baseFilePath + "_Electrolyzer_Parameters.xlsx";
+        
+        try (Workbook workbook = new XSSFWorkbook()) {
+            // Erstelle ein Sheet für alle Elektrolyseur-Parameter
+            Sheet parametersSheet = workbook.createSheet("Electrolyzer Parameters");
+            
+            // Erstelle Header-Zeile
+            Row headerRow = parametersSheet.createRow(0);
+            headerRow.createCell(0).setCellValue("Electrolyzer_ID");
+            headerRow.createCell(1).setCellValue("Power [MW]");
+            headerRow.createCell(2).setCellValue("Min_Operation [MW]");
+            headerRow.createCell(3).setCellValue("Max_Operation [MW]");
+            headerRow.createCell(4).setCellValue("Slope [kg/MWh]");
+            headerRow.createCell(5).setCellValue("Intercept [kg]");
+            headerRow.createCell(6).setCellValue("Startup_Duration [periods]");
+            headerRow.createCell(7).setCellValue("Startup_Cost [€/MW]");
+            headerRow.createCell(8).setCellValue("Standby_Cost [€/MW]");
+            headerRow.createCell(9).setCellValue("Ramp_Rate [MW/period]");
+            headerRow.createCell(10).setCellValue("Holding_Duration_IDLE [periods]");
+            headerRow.createCell(11).setCellValue("Holding_Duration_STARTING [periods]");
+            headerRow.createCell(12).setCellValue("Holding_Duration_PRODUCTION [periods]");
+            headerRow.createCell(13).setCellValue("Holding_Duration_STANDBY [periods]");
+            
+            int rowIndex = 1;
+            
+            // Iteriere über alle Elektrolyseure
+            for (Electrolyzer electrolyzer : parameters.getElectrolyzers()) {
+                Row row = parametersSheet.createRow(rowIndex++);
+                
+                // Elektrolyseur ID
+                row.createCell(0).setCellValue(electrolyzer.getId());
+                
+                // Leistung
+                row.createCell(1).setCellValue(parameters.powerElectrolyzer.get(electrolyzer));
+                
+                // Betriebsgrenzen
+                row.createCell(2).setCellValue(parameters.minOperation.get(electrolyzer));
+                row.createCell(3).setCellValue(parameters.maxOperation.get(electrolyzer));
+                
+                // Effizienz-Parameter
+                row.createCell(4).setCellValue(parameters.slope.get(electrolyzer));
+                row.createCell(5).setCellValue(parameters.intercept.get(electrolyzer));
+                
+                // Start-up Parameter
+                row.createCell(6).setCellValue(parameters.startupDuration.get(electrolyzer));
+                row.createCell(7).setCellValue(parameters.startupCost.get(electrolyzer));
+                row.createCell(8).setCellValue(parameters.standbyCost.get(electrolyzer));
+                
+                // Ramp Rate
+                row.createCell(9).setCellValue(parameters.getRampRate(electrolyzer));
+                
+                // Holding Durations für alle Zustände
+                Map<State, Integer> holdingDurations = parameters.holdingDurations.get(electrolyzer);
+                row.createCell(10).setCellValue(holdingDurations.get(State.IDLE));
+                row.createCell(11).setCellValue(holdingDurations.get(State.STARTING));
+                row.createCell(12).setCellValue(holdingDurations.get(State.PRODUCTION));
+                row.createCell(13).setCellValue(holdingDurations.get(State.STANDBY));
+            }
+            
+            // Auto-resize Spalten
+            for (int i = 0; i < 14; i++) {
+                parametersSheet.autoSizeColumn(i);
+            }
+            
+            // Speichere die Datei
+            try (FileOutputStream fileOut = new FileOutputStream(filePath)) {
+                workbook.write(fileOut);
+            }
+            
+            System.out.println("Elektrolyseur-Parameter erfolgreich exportiert nach: " + filePath);
+            
+        } catch (Exception e) {
+            System.err.println("Fehler beim Exportieren der Elektrolyseur-Parameter: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 
 }

@@ -72,7 +72,8 @@ public class Parameters {
     }
 
     public Double getRampRate(Electrolyzer electrolyzer) {
-        return rampRate.get(electrolyzer);
+        Double value = rampRate.get(electrolyzer);
+        return value != null ? value : 0.0;
     }
 
     public void setRampRate(Electrolyzer electrolyzer, Double rate) {
@@ -94,19 +95,23 @@ public class Parameters {
     
     // Getter for period demand
     public Double getPeriodDemand(Period period) {
-        return demand.get(period);
+        Double value = demand.get(period);
+        return value != null ? value : 0.0;
     }
     
     public Double getPurchasedEnergy(Period period) {
-        return purchasedGridEnergy.get(period);
+        Double value = purchasedGridEnergy.get(period);
+        return value != null ? value : 0.0;
     }
     
     public Double getTotalElectrolyzerEnergy(Period period) {
-        return totalElectrolyzerEnergy.get(period);
+        Double value = totalElectrolyzerEnergy.get(period);
+        return value != null ? value : 0.0;
     }
     
     public Double getRenewableEnergy(Period period) {
-        return renewableEnergyForecast.get(period);
+        Double value = renewableEnergyForecast.get(period);
+        return value != null ? value : 0.0;
     }
     
 }

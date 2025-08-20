@@ -55,7 +55,7 @@
             <artifactId>jade</artifactId>
             <version>4.5.0</version>
             <scope>system</scope>
-            <systemPath>C:/Users/VincentHenkel/OneDrive - Helmut-Schmidt-Universität/04_Programmierung/JAR/jade.jar</systemPath>
+            <systemPath>${project.basedir}/lib/jade.jar</systemPath>
         </dependency>
 		
 		<dependency>

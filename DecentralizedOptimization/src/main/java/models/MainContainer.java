@@ -36,9 +36,9 @@ public class MainContainer {
             Workbook workbook = new XSSFWorkbook(excelFile);
 
             // Set parameters
-            int totalNumberADMMAgents = 4; 
-            double rho = 1.37728;
-            int maxIterations = 20;
+            int totalNumberADMMAgents = 5; 
+            double rho = 1.5;
+            int maxIterations = 10;
             
             // Start the AMSAgent
             Object[] amsAgentArgs = new Object[]{totalNumberADMMAgents};

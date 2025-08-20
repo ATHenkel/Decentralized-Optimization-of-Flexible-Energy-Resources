@@ -152,7 +152,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
         receivedConvergenceMessages++;
         if (receivedConvergenceMessages == totalNumberADMMAgents - 1) {
         	
-           	        // Save Results and Terminate SWO Optimization
+           	// Save Results and Terminate SWO Optimization
             saveSWOResultsAndTerminate();
         	
         }
@@ -298,7 +298,14 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
             }
 
             String excelFilePathFinalResults = desktopPath + "/" + saveDetails + "_FinalSWOResults_" + myAgent.getLocalName() + ".xlsx";
-            dataModel.exportFinalIterationResultsToExcel(swoIterationCount, parameters.getElectrolyzers(), parameters.getPeriods(), parameters, excelFilePathFinalResults);
+            
+            // Check if data is available before exporting final results
+            if (dataModel.getXSWOValuesForIteration(swoIterationCount) != null) {
+                dataModel.exportFinalIterationResultsToExcel(swoIterationCount, parameters.getElectrolyzers(), parameters.getPeriods(), parameters, excelFilePathFinalResults);
+                System.out.println("Final results successfully exported to: " + excelFilePathFinalResults);
+            } else {
+                System.out.println("Warning: No data available for final iteration " + swoIterationCount + ". Skipping final results export.");
+            }
             
             // Export all variables per electrolyzer to separate Excel files
             if (myAgent.getLocalName().equals("ADMM3")) {
@@ -311,6 +318,11 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
                         baseFilePath
                     );
                     System.out.println("All variables successfully exported to separate Excel files.");
+                    
+                    // Export electrolyzer parameters to separate Excel file
+                    dataModel.exportElectrolyzerParametersToExcel(baseFilePath, parameters);
+                    System.out.println("Electrolyzer parameters successfully exported to separate Excel file.");
+                    
                 } catch (Exception e) {
                     System.err.println("Error exporting variables: " + e.getMessage());
                     e.printStackTrace();
@@ -581,11 +593,8 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	            double x = xValues[agentID][periodIndex];
 	            double intervalLength = params.intervalLengthSWO;
 
-	            // Conversion from boolean to 0 (false) or 1 (true)
-	            int isProductionActive = y[State.PRODUCTION.ordinal()] ? 1 : 0;
-
 	            // Calculation of production: intercept is only used when isProductionActive == 1
-	            productionSum += intervalLength * (x * slope * powerElectrolyzer + intercept * isProductionActive);
+	            productionSum += intervalLength * (x * slope * powerElectrolyzer);
 	        }
 
 	        double deviation = Math.abs(demandPeriod - productionSum);

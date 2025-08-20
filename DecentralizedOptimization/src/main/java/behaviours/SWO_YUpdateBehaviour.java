@@ -266,9 +266,19 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
                 model.addConstr(residual3Vars.get(e).get(t), GRB.EQUAL, yResidual, "yResidual_constr_" + electrolyzerID + "_" + t.getT());
                 objectiveWithPenalty.addTerm(rho * RESIDUAL3_PENALTY_MULTIPLIER, residual3Vars.get(e).get(t), residual3Vars.get(e).get(t));
                 
-                // Penalty for STARTING state to avoid unnecessary starting
-                //GRBVar startingStateVar = yVars.get(e).get(t).get(State.STARTING);
-                //objectiveWithPenalty.addTerm(rho * STARTING_STATE_PENALTY_MULTIPLIER, startingStateVar);
+                   
+                /*if (xValues[periodIndex] < 0.001) {
+                    // Gradueller Penalty: Je kleiner x, desto stärker der Penalty
+                    double penaltyStrength = (0.001 - xValues[periodIndex]) / 0.001; // 0 bis 1
+                    double penalty = rho * penaltyStrength * 0.1; // Maximal 10% von rho
+                    
+                    GRBVar startingStateVar = yVars.get(e).get(t).get(State.STARTING);
+                    objectiveWithPenalty.addTerm(penalty, startingStateVar);
+                
+                    GRBVar standbyStateVar = yVars.get(e).get(t).get(State.STANDBY);
+                    objectiveWithPenalty.addTerm(penalty, standbyStateVar);
+                }*/
+            
             }
         }
 

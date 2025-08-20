@@ -46,19 +46,19 @@ public class ADMMAgent extends Agent {
     @SuppressWarnings("unchecked")
     @Override
     protected void setup() {
-        System.out.println("Agent " + getLocalName() + " startet");
+        System.out.println("Agent " + getLocalName() + " starting");
 
-        // Initialisiere ADMMDataModel
+        // Initialize ADMMDataModel
         dataModel = new ADMMDataModel();
 
-        // Lade Argumente (Workbook, electrolyzerIds, totalNumberADMMAgents, rho, maxIterations, amsAgentAID)
+        // Load arguments (Workbook, electrolyzerIds, totalNumberADMMAgents, rho, maxIterations, amsAgentAID)
         Object[] args = getArguments();
         
-        // Umgebungsvariable für Perioden-Sets lesen
+        // Read environment variable for period sets
         String periodsEnvVar = System.getenv(getLocalName() + "_PERIODS");
         Set<Period> assignedPeriods = new HashSet<>();
 
-        // Falls die Umgebungsvariable nicht gefunden wird, versuche, die Java-Systemeigenschaft zu verwenden
+        // If environment variable is not found, try to use Java system property
         if (periodsEnvVar == null || periodsEnvVar.isEmpty()) {
             periodsEnvVar = System.getProperty(getLocalName() + "_PERIODS");
         }
@@ -68,9 +68,9 @@ public class ADMMAgent extends Agent {
             for (String periodStr : periodStrings) {
                 try {
                     int periodValue = Integer.parseInt(periodStr.trim());
-                    assignedPeriods.add(new Period(periodValue)); // Annahme: Period-Klasse hat einen int-Konstruktor
+                    assignedPeriods.add(new Period(periodValue)); // Assumption: Period class has an int constructor
                 } catch (NumberFormatException e) {
-                    System.err.println("Ungültiger Periodenwert: " + periodStr);
+                    System.err.println("Invalid period value: " + periodStr);
                 }
             }
         } else {
@@ -79,16 +79,16 @@ public class ADMMAgent extends Agent {
         }
 
         
-        // Setzen der Perioden im DataModel
+        // Set periods in DataModel
         dataModel.setAssignedPeriods(assignedPeriods);
         
         if (args != null && args.length == 6) {
-            System.out.println("Überprüfe erhaltene Argumente:");
+            System.out.println("Checking received arguments:");
             for (int i = 0; i < args.length; i++) {
                 System.out.println("Argument " + i + ": " + args[i]);
             }
 
-            // Werte richtig zuordnen
+            // Assign values correctly
             workbook = (Workbook) args[0];
             electrolyzerIds = (Set<Integer>) args[1]; 
             totalNumberADMMAgents = (int) args[2];   
@@ -97,20 +97,20 @@ public class ADMMAgent extends Agent {
             amsAgentAID = (AID) args[5];             
         } 
         else {
-            System.out.println("Fehler: Nicht alle benötigten Argumente wurden übergeben.");
+            System.out.println("Error: Not all required arguments were provided.");
             doDelete();
             return;
         }
 
         try {
-            // Initialisiere das Gurobi Solver
+            // Initialize the Gurobi solver
             GRBEnv env = new GRBEnv(true);
             env.set("logFile", "gurobi.log");
             env.start();
             model = new GRBModel(env);
         } catch (GRBException e) {
             e.printStackTrace();
-            doDelete(); // Beende den Agenten bei Fehler
+            doDelete(); // Terminate agent on error
             return;
         }
 
@@ -130,7 +130,7 @@ public class ADMMAgent extends Agent {
         addBehaviour(sequentialBehaviour);
     }
 
-    // Verhalten zur Registrierung beim AMSAgent
+    // Behavior for registration with AMSAgent
     private class RegisterWithAMSBehaviour extends jade.core.behaviours.OneShotBehaviour {
         private static final long serialVersionUID = 6780623362396968936L;
 
@@ -145,39 +145,39 @@ public class ADMMAgent extends Agent {
             
             if (amsAgentHost == null || amsAgentPort == null || amsAgentHttpPort == null || 
                 agentHost == null || agentHttpPort == null) {
-                System.out.println("Fehler: Eine oder mehrere Umgebungsvariablen sind nicht gesetzt.");
+                System.out.println("Error: One or more environment variables are not set.");
             }
             
             //  If no environment variables are available, use default values
             if (amsAgentHost == null || amsAgentPort == null || amsAgentHttpPort == null) {
                 amsAgentHost = "192.168.56.1";
-                amsAgentPort = "1099"; // Standard-JADE-Port
-                amsAgentHttpPort = "7778"; // Example HTTP-Port
-                System.out.println("Lokal: Standardwerte für AMS-Agent-Registrierung werden verwendet.");
+                amsAgentPort = "1099"; // Standard JADE port
+                amsAgentHttpPort = "7778"; // Example HTTP port
+                System.out.println("Local: Using default values for AMS agent registration.");
             }
 
             if (agentHost == null || agentHttpPort == null) {
                 agentHost = "192.168.56.1"; // Standard localhost
-                agentHttpPort = "7778";  // Beispiel-HTTP-Port für den Agenten
-                System.out.println("Lokal: Standardwerte für Agent-Host und -Port werden verwendet.");
+                agentHttpPort = "7778";  // Example HTTP port for the agent
+                System.out.println("Local: Using default values for agent host and port.");
             }
 
-            // Erstelle eine AID für den AMSAgent
+            // Create an AID for the AMSAgent
             AID amsAgentAID = new AID("AMSAgent@" + amsAgentHost + ":" + amsAgentPort + "/JADE", AID.ISGUID);
             amsAgentAID.addAddresses("http://" + amsAgentHost + ":" + amsAgentHttpPort + "/acc");
         	
-            // Sende die Registrierung an den AMSAgent mit Host- und Portinformationen
+            // Send registration to AMSAgent with host and port information
             ACLMessage registerMsg = new ACLMessage(ACLMessage.INFORM);
             String content = "register:" + agentHost + "," + agentHttpPort;
             registerMsg.setContent(content);
             registerMsg.addReceiver(amsAgentAID);
             send(registerMsg);
 
-            System.out.println("Agent " + getLocalName() + " hat sich beim AMSAgent registriert.");
+            System.out.println("Agent " + getLocalName() + " has registered with AMSAgent.");
         }
     }
 
-    // Verhalten zum Empfangen des Telefonbuchs
+    // Behavior for receiving the phone book
     private class ReceivePhoneBookBehaviour extends jade.core.behaviours.Behaviour {
         private static final long serialVersionUID = -1746952716743079101L;
 
@@ -187,38 +187,35 @@ public class ADMMAgent extends Agent {
         public void action() {
             ACLMessage msg = receive();
             if (msg != null && msg.getContent().startsWith("phoneBook:")) {
-                //System.out.println("Initialisiere Telefonbuch für Agent: " + myAgent.getLocalName());
+                //System.out.println("Initialize phone book for agent: " + myAgent.getLocalName());
                 String[] agentsInfo = msg.getContent().substring("phoneBook:".length()).split(";");
 
-                // Füge die AIDs und Adressen in das Telefonbuch des ADMMAgenten ein
+                // Add AIDs and addresses to the ADMMAgent's phone book
                 for (String agentInfo : agentsInfo) {
-                    // Aufteilen in Name und Adresse anhand des Kommas
+                    // Split into name and address using comma
                     String[] parts = agentInfo.split(",");
                     if (parts.length == 2) {
                         String agentName = parts[0].trim();
                         String address = parts[1].trim();
 
-                        //System.out.println("AgentName im Telefonbuch: " + agentName);
-                        //System.out.println("Adresse im Telefonbuch: " + address);
-
-                        // Extrahiere Host und Port aus der Adresse
+                        // Extract host and port from address
                         String host = address.replaceAll("http://|/acc", "").split(":")[0];
                         String port = address.replaceAll("http://|/acc", "").split(":")[1];
 
-                        // Erstelle den vollständigen Namen und die Adresse im gewünschten Format
+                        // Create full name and address in desired format
                         String fullAgentName = agentName + "@" + host + ":1099/JADE";
                         String fullAddress = "http://" + host + ":" + port + "/acc";
 
-                        // Erstelle und füge AID zum Telefonbuch hinzu
+                        // Create and add AID to phone book
                         AID agentAID = new AID(fullAgentName, AID.ISGUID);
                         agentAID.addAddresses(fullAddress);
                         dataModel.addAID2PhoneBook(agentAID);
                     }
                 }
 
-                System.out.println("Telefonbuch für " + getLocalName() + " erhalten: " + dataModel.getPhoneBook());
+                System.out.println("Phone book received for " + getLocalName() + ": " + dataModel.getPhoneBook());
 
-                // Markiere das Telefonbuch als empfangen
+                // Mark phone book as received
                 phoneBookReceived = true;
             } else {
                 block();
@@ -231,22 +228,22 @@ public class ADMMAgent extends Agent {
         }
     }
 
-    // Verhalten zum Starten des Optimierungsprozesses nach dem Empfang des Telefonbuchs
+    // Behavior for starting the optimization process after receiving the phone book
     private class StartOptimizationBehaviour extends jade.core.behaviours.OneShotBehaviour {
         private static final long serialVersionUID = -3765962122765028605L;
 
         @Override
         public void action() {
-            // Erstelle eine Sequenz von Verhaltensweisen (Behaviours)
+            // Create a sequence of behaviors (Behaviours)
             SequentialBehaviour admmSequentialBehaviour = new SequentialBehaviour();
 
-            // 1. Lade die Parameter aus der Excel-Datei
+            // 1. Load parameters from Excel file
             admmSequentialBehaviour.addSubBehaviour(new LoadParametersBehaviour(workbook, dataModel) {
                 private static final long serialVersionUID = 1L;
 
                 @Override
                 public int onEnd() {
-                    // Parameter nach dem Laden aus dem ADMMDataModel abrufen
+                    // Get parameters after loading from ADMMDataModel
                     parameters = dataModel.getParameters();
                     int numPeriods = parameters.getPeriods().size();
 
@@ -258,23 +255,23 @@ public class ADMMAgent extends Agent {
                         
                         dataModel.setAllElectrolyzers(parameters.getElectrolyzers());
 
-                        // Starte den ADMM Zyklus und übergebe die maximale Anzahl der Iterationen
+                        // Start ADMM cycle and pass maximum number of iterations
                         addBehaviour(new SWO_CyclicBehaviour(totalNumberADMMAgents, model, parameters, dataModel, filterElectrolyzers(), parameters.getPeriods(), rho, iteration, maxIterations));
                     } else {
-                        System.out.println("Fehler beim Laden der Parameter.");
+                        System.out.println("Error loading parameters.");
                         doDelete();
                     }
                     return super.onEnd();
                 }
             });
 
-            // Fügen Sie die Sequenz dem Agenten hinzu
+            // Add the sequence to the agent
             addBehaviour(admmSequentialBehaviour);
         }
 
     }
 
-    // Filtere die Elektrolyseure basierend auf den übergebenen IDs
+    // Filter electrolyzers based on the provided IDs
     private Set<Electrolyzer> filterElectrolyzers() {
         Set<Electrolyzer> allElectrolyzers = parameters.getElectrolyzers();
         Set<Electrolyzer> filteredElectrolyzers = new HashSet<>();
@@ -295,12 +292,12 @@ public class ADMMAgent extends Agent {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println("Agent " + getLocalName() + " beendet.");
+        System.out.println("Agent " + getLocalName() + " terminated.");
     }
 
     public static void main(String[] args) {
         try {
-            // Lade die Umgebungsvariablen
+            // Load environment variables
             String mainHost = System.getenv("MAIN_HOST");
             String amsAgentName = System.getenv("AMS_AGENT_AID");
             String agentName = System.getenv("AGENT_NAME");
@@ -313,8 +310,8 @@ public class ADMMAgent extends Agent {
                 electrolyzerIds.add(Integer.parseInt(id));
             }
 
-            // Debugging Informationen
-            System.out.println("Umgebungsvariablen:");
+            // Debugging information
+            System.out.println("Environment variables:");
             System.out.println("MAIN_HOST: " + mainHost);
             System.out.println("TOTAL_ADMM_AGENTS: " + totalNumberADMMAgents);
             System.out.println("MAX_ITERATIONS: " + maxIterations);
@@ -323,10 +320,10 @@ public class ADMMAgent extends Agent {
             System.out.println("AMS_AGENT_AID: " + amsAgentName);
             System.out.println("AGENT_NAME: " + agentName);
             
-            // Verwende Umgebungsvariable für den Dateipfad
+            // Use environment variable for file path
             String excelFilePath = System.getenv("EXCEL_FILE_PATH");
             if (excelFilePath == null || excelFilePath.isEmpty()) {
-                excelFilePath = "/InputData.xlsx"; // Standardpfad
+                excelFilePath = "/InputData.xlsx"; // Default path
             }
 
             String agentLocalName = agentName != null ? agentName : "ADMMAgent";
@@ -335,35 +332,35 @@ public class ADMMAgent extends Agent {
             Workbook workbook = null;
 
             try {
-                // Versuche, die Excel-Datei zu öffnen
+                // Try to open the Excel file
                 excelFile = new FileInputStream(excelFilePath);
                 System.out.println(excelFilePath + " found and loaded.");
                 
-                // Versuche, das Workbook zu erstellen
+                // Try to create the workbook
                 workbook = new XSSFWorkbook(excelFile);
-                System.out.println("Workbook erfolgreich erstellt.");
+                System.out.println("Workbook successfully created.");
                 
             } catch (FileNotFoundException e) {
                 System.out.println(excelFilePath + " not found.");
                 e.printStackTrace();
             } catch (Exception e) {
-                System.out.println("Fehler beim Laden des Workbooks.");
+                System.out.println("Error loading workbook.");
                 e.printStackTrace();
             } finally {
-                // Schließe den FileInputStream, falls er geöffnet wurde
+                // Close FileInputStream if it was opened
                 if (excelFile != null) {
                     try {
                         excelFile.close();
                     } catch (Exception e) {
-                        System.out.println("Fehler beim Schließen der Excel-Datei.");
+                        System.out.println("Error closing Excel file.");
                         e.printStackTrace();
                     }
                 }
             }
 
-            // Überprüfe, ob das Workbook erfolgreich geladen wurde
+            // Check if workbook was successfully loaded
             if (workbook == null) {
-                System.out.println("Fehler: Workbook konnte nicht geladen werden. Agent wird beendet.");
+                System.out.println("Error: Workbook could not be loaded. Agent will be terminated.");
                 return;
             }
 
@@ -375,7 +372,7 @@ public class ADMMAgent extends Agent {
 
             AgentContainer mainContainer = rt.createMainContainer(p);
 
-            // Erstelle den ADMMAgent mit dem angegebenen Namen
+            // Create ADMMAgent with specified name
             AID amsAgentAID = new AID(amsAgentName != null ? amsAgentName : "AMSAgent", AID.ISLOCALNAME);
             Object[] agentArgs = new Object[]{workbook, electrolyzerIds, totalNumberADMMAgents, rho, maxIterations, amsAgentAID};
             System.out.println("Agent arguments: " + Arrays.toString(agentArgs));

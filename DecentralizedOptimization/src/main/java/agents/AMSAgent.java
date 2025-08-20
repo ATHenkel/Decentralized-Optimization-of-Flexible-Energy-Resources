@@ -19,15 +19,15 @@ public class AMSAgent extends Agent {
 
     @Override
     protected void setup() {
-        // Überprüfen, ob der Parameter totalAgents beim Start übergeben wurde
+        // Check if totalAgents parameter was passed at startup
         Object[] args = getArguments();
         if (args != null && args.length > 0 && args[0] instanceof Integer) {
             totalNumberADMMAgents = (Integer) args[0];
         }
 
-        System.out.println("AMSAgent " + this.getAID() + " gestartet. Erwartete Anzahl von Agenten: " + totalNumberADMMAgents);
+        System.out.println("AMSAgent " + this.getAID() + " started. Expected number of agents: " + totalNumberADMMAgents);
 
-        // Verhalten hinzufügen, um AID-Nachrichten von ADMMAgents zu empfangen
+        // Add behavior to receive AID messages from ADMMAgents
         addBehaviour(new jade.core.behaviours.CyclicBehaviour() {
             private static final long serialVersionUID = -1480562027183279172L;
 
@@ -35,30 +35,30 @@ public class AMSAgent extends Agent {
             public void action() {
                 ACLMessage msg = receive();
                 if (msg != null) {
-                    // Ausgabe der empfangenen Nachricht
-                    System.out.println("Nachricht von " + msg.getSender().getLocalName() + " erhalten: " + msg.getContent());
+                    // Output received message
+                    System.out.println("Message received from " + msg.getSender().getLocalName() + ": " + msg.getContent());
 
                     if (msg.getContent().startsWith("register:")) {
-                        // Extrahiere die Host- und Portinformationen aus der Nachricht
+                        // Extract host and port information from message
                         String[] contentParts = msg.getContent().substring("register:".length()).split(",");
                         if (contentParts.length == 2) {
                             String senderHost = contentParts[0];
                             String senderHttpPort = contentParts[1];
 
-                            // Erstelle eine AID für den Agenten mit den empfangenen Adressinformationen
+                            // Create AID for agent with received address information
                             AID senderAID = new AID(msg.getSender().getLocalName() + "@" + senderHost + ":1099/JADE", AID.ISGUID);
                             senderAID.addAddresses("http://" + senderHost + ":" + senderHttpPort + "/acc");
                             phoneBook.add(senderAID);
-                            System.out.println("AID von " + senderAID.getLocalName() + " erhalten und zum Telefonbuch hinzugefügt.");
+                            System.out.println("AID from " + senderAID.getLocalName() + " received and added to phone book.");
 
-                            // Prüfen, ob alle Agenten registriert sind
+                            // Check if all agents are registered
                             if (phoneBook.size() == totalNumberADMMAgents) {
-                                System.out.println("Alle Agenten registriert. Sende Telefonbuch an alle Agenten.");
-                                // Sende das vollständige Telefonbuch an alle Agenten
+                                System.out.println("All agents registered. Sending phone book to all agents.");
+                                // Send complete phone book to all agents
                                 sendPhoneBookToAgents();
                             }
                         } else {
-                            System.out.println("Fehler: Ungültiges Nachrichtenformat für die Registrierung.");
+                            System.out.println("Error: Invalid message format for registration.");
                         }
                     }
                 } else {
@@ -66,29 +66,28 @@ public class AMSAgent extends Agent {
                 }
             }
 
-            // Methode zum Senden des Telefonbuchs an alle registrierten Agenten
+            // Method to send phone book to all registered agents
             private void sendPhoneBookToAgents() {
                 try {
                     ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
                     StringBuilder phoneBookContent = new StringBuilder();
 
-                    // Erstelle einen String mit allen AIDs für das Telefonbuch
+                    // Create string with all AIDs for phone book
                     for (AID agentAID : phoneBook) {
                         String agentEntry = agentAID.getLocalName() + "," + agentAID.getAddressesArray()[0];
                         phoneBookContent.append(agentEntry).append(";");
-                        reply.addReceiver(agentAID); // Füge alle Agenten als Empfänger hinzu
+                        reply.addReceiver(agentAID); // Add all agents as recipients
                     }
 
-                    // Entferne das letzte Semikolon
+                    // Remove last semicolon
                     if (phoneBookContent.length() > 0) {
                         phoneBookContent.setLength(phoneBookContent.length() - 1);
                     }
 
-                    // Setze das Telefonbuch als Nachricht
+                    // Set phone book as message
                     reply.setContent("phoneBook:" + phoneBookContent.toString());
-                    send(reply); // Sende das Telefonbuch an alle Agenten
-                    System.out.println("Telefonbuch gesendet: " + phoneBookContent);
-
+                    send(reply); // Send phone book to all agents
+            
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -96,9 +95,9 @@ public class AMSAgent extends Agent {
         });
     }
 
-    // Main-Methode für Docker und lokale Umgebungen
+    // Main method for Docker and local environments
     public static void main(String[] args) {
-        // Lade die Umgebungsvariable für die MAIN_HOST
+        // Load environment variable for MAIN_HOST
         String mainHost = System.getenv("MAIN_HOST");
 
         // Set up the JADE runtime environment
@@ -107,17 +106,17 @@ public class AMSAgent extends Agent {
         // Create a profile for the main container
         Profile p = new ProfileImpl();
         p.setParameter(Profile.MAIN, "true");
-        p.setParameter(Profile.MAIN_HOST, mainHost != null ? mainHost : "localhost"); // Verwende die Umgebungsvariable oder localhost
+        p.setParameter(Profile.MAIN_HOST, mainHost != null ? mainHost : "localhost"); // Use environment variable or localhost
         p.setParameter(Profile.MAIN_PORT, "1099");
 
         // Create the main container
         AgentContainer mainContainer = rt.createMainContainer(p);
 
         try {
-            // Lade totalNumberADMMAgents aus der Umgebungsvariable
+            // Load totalNumberADMMAgents from environment variable
             int totalNumberADMMAgents = Integer.parseInt(System.getenv("TOTAL_ADMM_AGENTS"));
 
-            // Erstelle den AMSAgent mit der Anzahl der erwarteten ADMM-Agenten
+            // Create AMSAgent with expected number of ADMM agents
             Object[] agentArgs = new Object[]{totalNumberADMMAgents};
             AgentController agentController = mainContainer.createNewAgent("AMSAgent", AMSAgent.class.getName(), agentArgs);
             agentController.start();

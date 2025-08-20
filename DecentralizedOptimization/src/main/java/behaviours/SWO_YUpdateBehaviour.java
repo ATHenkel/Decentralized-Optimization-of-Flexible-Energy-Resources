@@ -47,7 +47,6 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
     
     // Performance tracking
     private long yUpdateTime = 0;
-    private int sentMessages = 0;
     
     // Optimization variables
     private Map<Electrolyzer, Map<Period, Map<State, GRBVar>>> yVars;
@@ -87,7 +86,6 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
             initializeVariableMaps();
             initializeStateTransitionConstraints();
             initializeHoldingDurationConstraints();
-            initializeSecondPeriodConstraints();
             model.update(); // Apply variable and constraint updates
         } catch (GRBException e) {
             e.printStackTrace();
@@ -189,40 +187,6 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
         }
     }
     
-    /**
-     * Initializes special constraints for the second period
-     */
-    private void initializeSecondPeriodConstraints() throws GRBException {
-        for (Electrolyzer e : electrolyzers) {
-            int electrolyzerID = e.getId() - 1;
-
-            for (Period t : periods) {
-                // Constraints for the second period 
-                if (t.getT() == 2) {
-                    Period firstPeriod = new Period(1);
-
-                    // STARTING only if the previous period was IDLE
-                    model.addConstr(yVars.get(e).get(t).get(State.STARTING), GRB.LESS_EQUAL,
-                            yVars.get(e).get(firstPeriod).get(State.IDLE),
-                            "starting_if_idle_" + electrolyzerID + "_" + t.getT());
-
-                    // No PRODUCTION if the previous period was IDLE
-                    model.addConstr(yVars.get(e).get(t).get(State.PRODUCTION), GRB.EQUAL, 0,
-                            "no_production_if_idle_" + electrolyzerID + "_" + t.getT());
-
-                    // No STANDBY if the previous period was IDLE
-                    model.addConstr(yVars.get(e).get(t).get(State.STANDBY), GRB.EQUAL, 0,
-                            "no_standby_if_idle_" + electrolyzerID + "_" + t.getT());
-
-                    // IDLE must continue if it was IDLE in the first period
-                    model.addConstr(yVars.get(e).get(t).get(State.IDLE), GRB.LESS_EQUAL,
-                            yVars.get(e).get(firstPeriod).get(State.IDLE),
-                            "idle_continued_" + electrolyzerID + "_" + t.getT());
-                }
-            }
-        }
-    }
-
     // ============================================================================
     // BEHAVIOR EXECUTION
     // ============================================================================

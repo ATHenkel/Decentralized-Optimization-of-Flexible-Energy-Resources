@@ -23,11 +23,11 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
     // CONSTANTS
     // ============================================================================
     private static final long serialVersionUID = 1L;
-    private static final double OPTIMALITY_TOLERANCE = 1e-3;
-    private static final double RESIDUAL1_PENALTY_MULTIPLIER = 100000; // Statt 5000 //min operation, 99999.0 is a large number
-    private static final double RESIDUAL2_PENALTY_MULTIPLIER = 1.0; //max operation
-    private static final double RESIDUAL3_PENALTY_MULTIPLIER = 1.0; //y-sum constraint
-    private static final double STARTING_STATE_PENALTY_MULTIPLIER = 1.0; //penalty for starting state
+    private static final double OPTIMALITY_TOLERANCE = 1e-6;
+    private static final double RESIDUAL1_PENALTY_MULTIPLIER = 100; // Statt 5000 //min operation, 99999.0 is a large number
+    private static final double RESIDUAL2_PENALTY_MULTIPLIER = 1; //max operation
+    private static final double RESIDUAL3_PENALTY_MULTIPLIER = 1e6; //y-sum constraint
+    private static final double STARTING_STATE_PENALTY_MULTIPLIER = 0.00; //penalty for starting state
 
     // ============================================================================
     // INSTANCE VARIABLES
@@ -43,7 +43,6 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
     private final double rho; // Weighting factor for penalty terms
     private final Predicate<Electrolyzer> filterCriteria;
     private final int currentStartPeriod;
-
     
     // Performance tracking
     private long yUpdateTime = 0;
@@ -240,6 +239,7 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
                 residual1.addConstant(-xValues[periodIndex]);
                 residual1.addTerm(params.minOperation.get(e), yVars.get(e).get(t).get(State.PRODUCTION));
                 //residual1.addConstant(sValues[periodIndex][0] + uValues[periodIndex][0]);
+                residual1.addConstant(uValues[periodIndex][0]);
                 
                 model.addConstr(residual1Vars.get(e).get(t), GRB.EQUAL, residual1, "residual1_constr_" + electrolyzerID + "_" + t.getT());
                 objectiveWithPenalty.addTerm(rho * RESIDUAL1_PENALTY_MULTIPLIER, residual1Vars.get(e).get(t), residual1Vars.get(e).get(t));
@@ -249,6 +249,7 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
                 residual2.addConstant(xValues[periodIndex]);
                 residual2.addTerm(-params.maxOperation.get(e), yVars.get(e).get(t).get(State.PRODUCTION));
                 //residual2.addConstant(sValues[periodIndex][1] + uValues[periodIndex][1]);
+                residual2.addConstant(uValues[periodIndex][1]);
                 
                 model.addConstr(residual2Vars.get(e).get(t), GRB.EQUAL, residual2, "residual2_constr_" + electrolyzerID + "_" + t.getT());
                 objectiveWithPenalty.addTerm(rho * RESIDUAL2_PENALTY_MULTIPLIER, residual2Vars.get(e).get(t), residual2Vars.get(e).get(t));
@@ -266,8 +267,8 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
                 objectiveWithPenalty.addTerm(rho * RESIDUAL3_PENALTY_MULTIPLIER, residual3Vars.get(e).get(t), residual3Vars.get(e).get(t));
                 
                 // Penalty for STARTING state to avoid unnecessary starting
-                GRBVar startingStateVar = yVars.get(e).get(t).get(State.STARTING);
-                objectiveWithPenalty.addTerm(rho * STARTING_STATE_PENALTY_MULTIPLIER, startingStateVar);
+                //GRBVar startingStateVar = yVars.get(e).get(t).get(State.STARTING);
+                //objectiveWithPenalty.addTerm(rho * STARTING_STATE_PENALTY_MULTIPLIER, startingStateVar);
             }
         }
 
@@ -296,14 +297,14 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
                         double yProductionValue = yVars.get(e).get(t).get(State.PRODUCTION).get(GRB.DoubleAttr.X);
                         
                         // Check if x < opMin but PRODUCTION state is active
-                        if (xValue > opMin && yProductionValue == 0.0 || xValue < opMin && yProductionValue > 0.5) {
+                     /*    if (xValue > opMin && yProductionValue == 0.0 || xValue < opMin && yProductionValue > 0.5) {
                             System.err.println("WARNING: x < opMin but PRODUCTION active - " +
                                 "Electrolyzer: " + e.getId() + 
                                 ", Period: " + t.getT() + 
                                 ", x-value: " + xValue + 
                                 ", opMin: " + opMin + 
                                 ", y_PRODUCTION: " + yProductionValue);
-                        }
+                        }*/
                     }
                 }
             }

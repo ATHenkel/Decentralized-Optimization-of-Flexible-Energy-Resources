@@ -329,33 +329,10 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
                 }
             }
 
-            /* 
-            // Export of final results
-            dataModel.exportFinalIterationResultsToExcel(swoIterationCount, parameters.getElectrolyzers(), parameters.getPeriods(), parameters, excelFilePathFinalResults);
-            
-            System.out.println("Starting RTO Optimization Behaviour...");
-            
-            myAgent.addBehaviour(new RTO_CyclicBehaviour(
-                totalNumberADMMAgents,
-                model,
-                parameters,
-                dataModel,	
-                electrolyzers,
-                7,  
-                rho,
-                swoIterationCount // corresponds to final iteration
-            ));*/
-            
+        
             System.out.println("Remove SWO-Cyclic Behaviour for Agent: " + myAgent.getLocalName());
             myAgent.removeBehaviour(this);
 
-            
-//            // Export of iteration data
-//            dataModel.writeValuesToExcel_Distributed(excelFilePathIterationResults);
-//
-//            System.out.println("Results successfully saved:");
-//            System.out.println("Iteration data: " + excelFilePathIterationResults);
-//            System.out.println("Final results: " + excelFilePathFinalResults);
         } catch (Exception e) {
             System.err.println("Error writing Excel files: " + e.getMessage());
             e.printStackTrace();
@@ -453,6 +430,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 	            }
 	            double ySumTolerance = tolerancePercentage; // Tolerance for sum condition
 	            if (Math.abs(ySum - 1) > ySumTolerance) {
+                    System.out.println("Constraint violation: ySum (" + ySum + ") != 1 (with tolerance " + ySumTolerance + ") for Electrolyzer " + electrolyzer.getId() + " in Period " + period.getT());
 	                feasible = false;
 	            }
 

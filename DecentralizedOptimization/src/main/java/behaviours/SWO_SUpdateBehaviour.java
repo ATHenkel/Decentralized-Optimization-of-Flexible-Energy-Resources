@@ -78,13 +78,6 @@ public class SWO_SUpdateBehaviour extends OneShotBehaviour {
                     double opMin = params.minOperation.get(electrolyzer);
                     double opMax = params.maxOperation.get(electrolyzer);
 
-                    /* 
-                    // If not in PRODUCTION state, force both slack variables to zero
-                    if (productionYValue == 0.0) {
-                        sVarArray[0].set(GRB.DoubleAttr.UB, 0.0);
-                        sVarArray[1].set(GRB.DoubleAttr.UB, 0.0);
-                    }*/
-
                     // Residual 1
                     if (productionYValue > 0) { // Only active when in Production state
                         GRBLinExpr residual1 = new GRBLinExpr();

@@ -226,7 +226,6 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
         Map<Electrolyzer, double[]> xValuesMap = new HashMap<>();
         for (Electrolyzer e : electrolyzers) {
             int electrolyzerID = e.getId()-1;
-            double[][] sValues = dataModel.getSSWOValuesForAgent(iteration, electrolyzerID);
             double[][] uValues = dataModel.getUSWOValuesForAgent(iteration, electrolyzerID);
             double[] xValues = dataModel.getXSWOValuesForAgent(nextIteration, electrolyzerID);
             xValuesMap.put(e, xValues);
@@ -238,7 +237,6 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
                 GRBLinExpr residual1 = new GRBLinExpr();
                 residual1.addConstant(-xValues[periodIndex]);
                 residual1.addTerm(params.minOperation.get(e), yVars.get(e).get(t).get(State.PRODUCTION));
-                //residual1.addConstant(sValues[periodIndex][0] + uValues[periodIndex][0]);
                 residual1.addConstant(uValues[periodIndex][0]);
                 
                 model.addConstr(residual1Vars.get(e).get(t), GRB.EQUAL, residual1, "residual1_constr_" + electrolyzerID + "_" + t.getT());
@@ -248,7 +246,6 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
                 GRBLinExpr residual2 = new GRBLinExpr();
                 residual2.addConstant(xValues[periodIndex]);
                 residual2.addTerm(-params.maxOperation.get(e), yVars.get(e).get(t).get(State.PRODUCTION));
-                //residual2.addConstant(sValues[periodIndex][1] + uValues[periodIndex][1]);
                 residual2.addConstant(uValues[periodIndex][1]);
                 
                 model.addConstr(residual2Vars.get(e).get(t), GRB.EQUAL, residual2, "residual2_constr_" + electrolyzerID + "_" + t.getT());
@@ -265,19 +262,7 @@ public class SWO_YUpdateBehaviour extends OneShotBehaviour {
 
                 model.addConstr(residual3Vars.get(e).get(t), GRB.EQUAL, yResidual, "yResidual_constr_" + electrolyzerID + "_" + t.getT());
                 objectiveWithPenalty.addTerm(rho * RESIDUAL3_PENALTY_MULTIPLIER, residual3Vars.get(e).get(t), residual3Vars.get(e).get(t));
-                
-                   
-                /*if (xValues[periodIndex] < 0.001) {
-                    // Gradueller Penalty: Je kleiner x, desto stärker der Penalty
-                    double penaltyStrength = (0.001 - xValues[periodIndex]) / 0.001; // 0 bis 1
-                    double penalty = rho * penaltyStrength * 0.1; // Maximal 10% von rho
-                    
-                    GRBVar startingStateVar = yVars.get(e).get(t).get(State.STARTING);
-                    objectiveWithPenalty.addTerm(penalty, startingStateVar);
-                
-                    GRBVar standbyStateVar = yVars.get(e).get(t).get(State.STANDBY);
-                    objectiveWithPenalty.addTerm(penalty, standbyStateVar);
-                }*/
+     
             
             }
         }

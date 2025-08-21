@@ -102,7 +102,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
     }
 
     /**
-     * Prüft, ob alle Dual-Update-Nachrichten empfangen wurden.
+     * Checks whether all dual-update messages have been received.
      */
     private void checkSWO_DualUpdateCompletion() {
         if (receivedDualMessages == totalNumberADMMAgents - 1) {
@@ -125,7 +125,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
     }
     
     /**
-     * Führt die Y-, S- und Dual-Updates aus.
+     * Executes the Y, S, and dual updates.
      */
     private void executeSWO_YSDualUpdates() {
         SequentialBehaviour seq = new SequentialBehaviour();
@@ -137,7 +137,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
 
 
     /**
-     * Führt das X-Update aus.
+     * Executes the X-update.
      */
     private void executeSWO_XUpdate() {
         Set<Period> filteredPeriods = dataModel.getAssignedPeriods();
@@ -146,7 +146,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
     }
 
     /**
-     * Verarbeitet Konvergenznachrichten.
+     * Processes convergence messages.
      */
     private void handleSWO_ConvergenceMessage() {
         receivedConvergenceMessages++;
@@ -201,7 +201,7 @@ public class SWO_CyclicBehaviour extends CyclicBehaviour {
             double renewableEnergyForCurrentPeriod = parameters.renewableEnergyForecast.get(period);
 
             for (Electrolyzer electrolyzer : dataModel.getAllElectrolyzers()) {
-                double xSWOValue = dataModel.getXSWOValueForAgentPeriod(swoIterationCount + 1, electrolyzer.getId() - 1, period.getT() - 1);  // +1 ist bereits korrekt
+                double xSWOValue = dataModel.getXSWOValueForAgentPeriod(swoIterationCount + 1, electrolyzer.getId() - 1, period.getT() - 1);  // +1 is already correct
                 double electrolyzerPower = parameters.powerElectrolyzer.get(electrolyzer);
                 double electrolyzerEnergy = xSWOValue * electrolyzerPower * parameters.intervalLengthSWO;
                 totalElectrolyzerEnergy += electrolyzerEnergy;

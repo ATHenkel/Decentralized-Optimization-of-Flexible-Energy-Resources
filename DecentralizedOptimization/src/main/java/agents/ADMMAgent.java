@@ -255,8 +255,14 @@ public class ADMMAgent extends Agent {
                         
                         dataModel.setAllElectrolyzers(parameters.getElectrolyzers());
 
-                        // Start ADMM cycle and pass maximum number of iterations
-                        addBehaviour(new SWO_CyclicBehaviour(totalNumberADMMAgents, model, parameters, dataModel, filterElectrolyzers(), parameters.getPeriods(), rho, iteration, maxIterations));
+                        // Start ADMM cycle based on number of agents
+                        if (totalNumberADMMAgents == 1) {
+                            // Single agent mode: use optimized sequential behaviour
+                            addBehaviour(new SWO_CyclicBehaviour_SingleAgent(totalNumberADMMAgents, model, parameters, dataModel, filterElectrolyzers(), parameters.getPeriods(), rho, iteration, maxIterations));
+                        } else {
+                            // Multi-agent mode: use original message-based behaviour
+                            addBehaviour(new SWO_CyclicBehaviour(totalNumberADMMAgents, model, parameters, dataModel, filterElectrolyzers(), parameters.getPeriods(), rho, iteration, maxIterations));
+                        }
                     } else {
                         System.out.println("Error loading parameters.");
                         doDelete();

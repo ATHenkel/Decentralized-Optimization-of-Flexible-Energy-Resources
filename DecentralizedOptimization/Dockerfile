@@ -47,6 +47,7 @@ RUN javac -cp "/JavaApp/libs/*" -d /JavaApp/bin \
 	/JavaApp/src/main/java/behaviours/SWO_XUpdateBehaviour.java \
 	/JavaApp/src/main/java/behaviours/SWO_YUpdateBehaviour.java \
     /JavaApp/src/main/java/behaviours/SWO_CyclicBehaviour.java \
+	/JavaApp/src/main/java/behaviours/SWO_CyclicBehaviour_SingleAgent.java \
 	/JavaApp/src/main/java/behaviours/SWO_DualUpdateBehaviour.java \
 	/JavaApp/src/main/java/behaviours/RTO_SUpdateBehaviour.java \
 	/JavaApp/src/main/java/behaviours/RTO_XUpdateBehaviour.java \

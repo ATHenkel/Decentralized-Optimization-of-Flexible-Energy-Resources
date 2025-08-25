@@ -1505,8 +1505,8 @@ public class ADMMDataModel {
 
         // Objective value
         Row computationRow = resultSheet.createRow(rowIndex++);
-        computationRow.createCell(0).setCellValue("Total Computation Time (ns)");
-        computationRow.createCell(1).setCellValue(computationTime);
+        computationRow.createCell(0).setCellValue("Total Computation Time (s)");
+        computationRow.createCell(1).setCellValue(computationTime / 1_000_000_000.0); // Convert nanoseconds to seconds
 
         Row objectiveRow = resultSheet.createRow(rowIndex++);
         objectiveRow.createCell(0).setCellValue("Objective Value");
@@ -1521,11 +1521,11 @@ public class ADMMDataModel {
         iterHeaderRow.createCell(3).setCellValue("Y Objective");
         iterHeaderRow.createCell(4).setCellValue("Sent Messages");
         iterHeaderRow.createCell(5).setCellValue("Received Dual Messages");
-        iterHeaderRow.createCell(6).setCellValue("X Update Time (ns)");
-        iterHeaderRow.createCell(7).setCellValue("Y Update Time (ns)");
-        iterHeaderRow.createCell(8).setCellValue("Dual Update Time (ns)");
-        iterHeaderRow.createCell(9).setCellValue("S Update Time (ns)");
-        iterHeaderRow.createCell(10).setCellValue("Update Duration in Iteration (ns)");
+        iterHeaderRow.createCell(6).setCellValue("X Update Time (s)");
+        iterHeaderRow.createCell(7).setCellValue("Y Update Time (s)");
+        iterHeaderRow.createCell(8).setCellValue("Dual Update Time (s)");
+        iterHeaderRow.createCell(9).setCellValue("S Update Time (s)");
+        iterHeaderRow.createCell(10).setCellValue("Update Duration in Iteration (s)");
         iterHeaderRow.createCell(11).setCellValue("Primal Residual");
         iterHeaderRow.createCell(12).setCellValue("Dual Residual");
 
@@ -1539,11 +1539,11 @@ public class ADMMDataModel {
             iterRow.createCell(3).setCellValue(getYObjectiveForIteration(i));
             iterRow.createCell(4).setCellValue(getSentMessagesForIteration(i));
             iterRow.createCell(5).setCellValue(getReceivedDualMessagePerIteration(i));
-            iterRow.createCell(6).setCellValue(getXUpdateTimeForIteration(i));
-            iterRow.createCell(7).setCellValue(getYUpdateTimeForIteration(i));
-            iterRow.createCell(8).setCellValue(getDualUpdateTimeForIteration(i));
-            iterRow.createCell(9).setCellValue(getSUpdateTimeForIteration(i));
-            iterRow.createCell(10).setCellValue(getXUpdateTimeForIteration(i) + getYUpdateTimeForIteration(i) + getDualUpdateTimeForIteration(i) + getSUpdateTimeForIteration(i));
+            iterRow.createCell(6).setCellValue(getXUpdateTimeForIteration(i) / 1_000_000_000.0); // Convert to seconds
+            iterRow.createCell(7).setCellValue(getYUpdateTimeForIteration(i) / 1_000_000_000.0); // Convert to seconds
+            iterRow.createCell(8).setCellValue(getDualUpdateTimeForIteration(i) / 1_000_000_000.0); // Convert to seconds
+            iterRow.createCell(9).setCellValue(getSUpdateTimeForIteration(i) / 1_000_000_000.0); // Convert to seconds
+            iterRow.createCell(10).setCellValue((getXUpdateTimeForIteration(i) + getYUpdateTimeForIteration(i) + getDualUpdateTimeForIteration(i) + getSUpdateTimeForIteration(i)) / 1_000_000_000.0); // Convert to seconds
             iterRow.createCell(11).setCellValue(getPrimalResidualForIteration(i)); // Primal Residual
             iterRow.createCell(12).setCellValue(getDualResidualForIteration(i));  // Dual Residual
         }

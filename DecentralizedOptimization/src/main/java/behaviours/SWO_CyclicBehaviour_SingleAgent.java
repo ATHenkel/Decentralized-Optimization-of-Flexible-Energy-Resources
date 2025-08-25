@@ -49,6 +49,10 @@ public class SWO_CyclicBehaviour_SingleAgent extends CyclicBehaviour {
 
     @Override
     public void action() {
+        // Set start time for computation time measurement (only once)
+        if (totalNumberADMMAgents == 1 && !isFirstXUpdateDone) {
+            dataModel.setStartComputationTime(System.nanoTime());
+        }
 
         // Stop when maximum iterations are reached
         if (swoIterationCount >= maxIterations) {
